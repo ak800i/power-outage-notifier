@@ -403,3 +403,4 @@ userdata.csv
 
 # docker image
 *.tar
+/docker-compose.yml

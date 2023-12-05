@@ -11,10 +11,10 @@ namespace PowerOutageNotifier
     public class MainService
     {
         private static readonly long? logChatId =
-            long.TryParse(Environment.GetEnvironmentVariable("LOG_CHAT_ID"), out var chatId)
+            long.TryParse(Environment.GetEnvironmentVariable("LOG_CHAT_ID"), out long chatId)
                 ? chatId
                 : null;
-        
+
         private static readonly string telegramBotToken = ConfigReader.ReadBotToken();
 
         private static readonly TelegramBotClient botClient = new TelegramBotClient(telegramBotToken);
@@ -22,23 +22,23 @@ namespace PowerOutageNotifier
         public static readonly List<UserData> userDataList = UserDataStore.ReadUserData();
 
         // URLs of the web page to scrape
-        private static readonly List<string> powerOutageUrls = new List<string>
-        {
+        private static readonly List<string> powerOutageUrls =
+        [
             "http://www.epsdistribucija.rs/planirana-iskljucenja-beograd/Dan_0_Iskljucenja.htm",
             "http://www.epsdistribucija.rs/planirana-iskljucenja-beograd/Dan_1_Iskljucenja.htm",
             "http://www.epsdistribucija.rs/planirana-iskljucenja-beograd/Dan_2_Iskljucenja.htm",
             "http://www.epsdistribucija.rs/planirana-iskljucenja-beograd/Dan_3_Iskljucenja.htm",
-        };
+        ];
 
-        private static readonly List<string> waterOutageUrls = new List<string>
-        {
+        private static readonly List<string> waterOutageUrls =
+        [
             "https://www.bvk.rs/planirani-radovi/",
-        };
+        ];
 
-        private static readonly List<string> waterUnplannedOutageUrls = new List<string>
-        {
+        private static readonly List<string> waterUnplannedOutageUrls =
+        [
             "https://www.bvk.rs/kvarovi-na-mrezi/",
-        };
+        ];
 
         public Task Start(TimeSpan? frequency = null)
         {
@@ -75,10 +75,7 @@ namespace PowerOutageNotifier
             );
         }
 
-        public void Stop()
-        {
-            LogAsync($"Service stopping on {Environment.MachineName}").GetAwaiter().GetResult();
-        }
+        public void Stop() => LogAsync($"Service stopping on {Environment.MachineName}").GetAwaiter().GetResult();
 
         private async Task MessageReceiver()
         {
@@ -88,18 +85,18 @@ namespace PowerOutageNotifier
             {
                 try
                 {
-                    var updates = await botClient.GetUpdatesAsync(offset);
+                    Update[] updates = await botClient.GetUpdatesAsync(offset);
 
-                    foreach (var update in updates)
+                    foreach (Update update in updates)
                     {
                         if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
                         {
-                            var message = update.Message;
+                            Message? message = update.Message;
                             if (message != null && message.Text != null)
                             {
-                                if (userRegistrationData.TryGetValue(message.Chat.Id, out var registrationData))
+                                if (userRegistrationData.TryGetValue(message.Chat.Id, out (UserRegistrationState State, UserData UserData) registrationData))
                                 {
-                                    await HandleUserResponse(message, registrationData);
+                                    await this.HandleUserResponse(message, registrationData);
                                 }
                                 else if (message.Text.StartsWith("/"))
                                 {
@@ -117,7 +114,7 @@ namespace PowerOutageNotifier
                     LogAsync($"MessageReceiver Exception: {ex.Message}").GetAwaiter().GetResult();
                 }
 
-                await Task.Delay(1000); // Delay to prevent excessive polling (adjust as needed)
+                await Task.Delay(1000); // Delay to prevent excessive polling
             }
         }
 
@@ -146,7 +143,7 @@ namespace PowerOutageNotifier
                     break;
                 case UserRegistrationState.AwaitingStreetName:
                     registrationData.UserData.StreetName = message.Text;
-                    userRegistrationData.Remove(chatId); // Registration complete
+                    _ = userRegistrationData.Remove(chatId); // Registration complete
                     await RegisterUser(registrationData.UserData);
                     break;
             }
@@ -162,7 +159,8 @@ namespace PowerOutageNotifier
             {
                 return;
             }
-            var messageText = message.Text.Split(' ');
+
+            string[] messageText = message.Text.Split(' ');
 
             switch (messageText.First())
             {
@@ -188,17 +186,17 @@ namespace PowerOutageNotifier
 
         private static async Task UnregisterUser(long chatId)
         {
-            var users = userDataList.Where(u => u.ChatId == chatId);
+            IEnumerable<UserData> users = userDataList.Where(u => u.ChatId == chatId);
             if (users.Count() == 0)
             {
                 await SendMessageAsync(chatId, "You are not registered.");
             }
             else
             {
-                foreach (var user in users)
+                foreach (UserData? user in users)
                 {
 
-                    userDataList.Remove(user);
+                    _ = userDataList.Remove(user);
                     UserDataStore.WriteUserData(userDataList); // Update the stored data
                 }
 
@@ -208,7 +206,7 @@ namespace PowerOutageNotifier
 
         private static async Task DisplayUserInfo(long chatId)
         {
-            var users = userDataList.Where(u => u.ChatId == chatId);
+            IEnumerable<UserData> users = userDataList.Where(u => u.ChatId == chatId);
             if (users.Count() == 0)
             {
                 await SendMessageAsync(chatId, "You are not currently registered.");
@@ -216,7 +214,7 @@ namespace PowerOutageNotifier
             else
             {
                 string userInfo = "";
-                foreach (var user in users)
+                foreach (UserData? user in users)
                 {
                     userInfo +=
                         $"Friendly Name: {user.FriendlyName}\n" +
@@ -233,14 +231,11 @@ namespace PowerOutageNotifier
             Console.WriteLine(message);
             if (logChatId.HasValue)
             {
-                await botClient.SendTextMessageAsync(logChatId.Value, message);
+                _ = await botClient.SendTextMessageAsync(logChatId.Value, message);
             }
         }
 
-        private static async Task SendMessageAsync(long chatId, string message)
-        {
-            await botClient.SendTextMessageAsync(chatId, message);
-        }
+        private static async Task SendMessageAsync(long chatId, string message) => await botClient.SendTextMessageAsync(chatId, message);
 
         public static async Task CheckAndNotifyPowerOutageAsync()
         {
@@ -270,7 +265,7 @@ namespace PowerOutageNotifier
                         // Get the street name from the second cell
                         string streets = cells[2].InnerText.Trim();
 
-                        foreach (var user in userDataList)
+                        foreach (UserData user in userDataList)
                         {
                             if (user.StreetName == null)
                             {
@@ -281,8 +276,8 @@ namespace PowerOutageNotifier
                             if (district == user.DistrictName
                                 && streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                string streetWithNumber = streets.Substring(streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase));
-                                streetWithNumber = streetWithNumber.Substring(0, streets.IndexOf(','));
+                                string streetWithNumber = streets[streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase)..];
+                                streetWithNumber = streetWithNumber[..streets.IndexOf(',')];
 
                                 Console.WriteLine(
                                     $"Power outage detected. {user.FriendlyName}, {user.DistrictName}, {streetWithNumber}, {user.ChatId}");
@@ -316,7 +311,7 @@ namespace PowerOutageNotifier
                     {
                         string nodeText = workNode.InnerText;
 
-                        foreach (var user in userDataList)
+                        foreach (UserData user in userDataList)
                         {
                             if (user.StreetName == null
                                 || user.DistrictName == null)
@@ -324,7 +319,7 @@ namespace PowerOutageNotifier
                                 continue;
                             }
 
-                            string declinationRoot = user.StreetName.Substring(0, user.StreetName.Length - 2);
+                            string declinationRoot = user.StreetName[..^2];
 
                             // Check if the street name occurs in the same entry as the correct district name
                             if (nodeText.IndexOf(user.DistrictName, StringComparison.OrdinalIgnoreCase) >= 0
@@ -369,7 +364,7 @@ namespace PowerOutageNotifier
                                 // Check for string occurrences
                                 string text = liElement.InnerText;
 
-                                foreach (var user in userDataList)
+                                foreach (UserData user in userDataList)
                                 {
                                     if (user.StreetName == null
                                         || user.DistrictName == null)
@@ -395,6 +390,7 @@ namespace PowerOutageNotifier
             }
         }
 
+        // TODO - implement so that it can run in a docker container
         public static async Task CheckAndNotifyParkingTicketsAsync()
         {
             string licensePlate = "BG677XX";
@@ -404,45 +400,43 @@ namespace PowerOutageNotifier
             // Set up ChromeDriver
             ChromeOptions options = new ChromeOptions();
             //options.AddArgument("--headless"); // Run in headless mode (without opening a browser window)
-            using (IWebDriver driver = new ChromeDriver(options))
+            using IWebDriver driver = new ChromeDriver(options);
+            driver.Navigate().GoToUrl(url);
+
+            // Find the input field and enter the license plate
+            IWebElement inputElement = driver.FindElement(By.CssSelector("input[name='fine']"));
+            inputElement.Clear();
+            inputElement.SendKeys(licensePlate);
+
+            // Find and click the submit button
+            IWebElement submitButton = driver.FindElement(By.CssSelector("button[type='submit']"));
+            submitButton.Click();
+
+            // Wait for the presence of the result message
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            By resultLocator = By.CssSelector("div.entry-text.no-edpk-message");
+            IWebElement resultElement = wait.Until(ExpectedConditions.ElementIsVisible(resultLocator));
+
+            // Check if the result element contains the keyword
+            if (resultElement.Text.Contains(searchKeyword))
             {
-                driver.Navigate().GoToUrl(url);
+                Console.WriteLine($"The keyword '{searchKeyword}' was found on the website.");
+            }
+            else
+            {
+                await SendMessageAsync(
+                    userDataList.Where(
+                        user => user.FriendlyName != null && user.FriendlyName.Contains("Ajanko"))
+                    .First()
+                    .ChatId,
+                    $"There is a parking fine at {url}");
 
-                // Find the input field and enter the license plate
-                IWebElement inputElement = driver.FindElement(By.CssSelector("input[name='fine']"));
-                inputElement.Clear();
-                inputElement.SendKeys(licensePlate);
-
-                // Find and click the submit button
-                IWebElement submitButton = driver.FindElement(By.CssSelector("button[type='submit']"));
-                submitButton.Click();
-
-                // Wait for the presence of the result message
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-                By resultLocator = By.CssSelector("div.entry-text.no-edpk-message");
-                IWebElement resultElement = wait.Until(ExpectedConditions.ElementIsVisible(resultLocator));
-
-                // Check if the result element contains the keyword
-                if (resultElement.Text.Contains(searchKeyword))
-                {
-                    Console.WriteLine($"The keyword '{searchKeyword}' was found on the website.");
-                }
-                else
-                {
-                    await SendMessageAsync(
-                        userDataList.Where(
-                            user => user.FriendlyName != null && user.FriendlyName.Contains("Ajanko"))
-                        .First()
-                        .ChatId,
-                        $"There is a parking fine at {url}");
-
-                    await SendMessageAsync(
-                        userDataList.Where(
-                            user => user.FriendlyName != null && user.FriendlyName.Contains("Ajanko"))
-                        .First()
-                        .ChatId,
-                        licensePlate);
-                }
+                await SendMessageAsync(
+                    userDataList.Where(
+                        user => user.FriendlyName != null && user.FriendlyName.Contains("Ajanko"))
+                    .First()
+                    .ChatId,
+                    licensePlate);
             }
         }
     }
