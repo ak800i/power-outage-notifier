@@ -94,13 +94,14 @@ namespace PowerOutageNotifier
                             Message? message = update.Message;
                             if (message != null && message.Text != null)
                             {
-                                if (userRegistrationData.TryGetValue(message.Chat.Id, out (UserRegistrationState State, UserData UserData) registrationData))
+                                if (message.Text.StartsWith("/")) 
+                                {
+                                    _ = userRegistrationData.Remove(message.Chat.Id);
+                                    await HandleCommand(message);
+                                }
+                                else if (userRegistrationData.TryGetValue(message.Chat.Id, out (UserRegistrationState State, UserData UserData) registrationData))
                                 {
                                     await this.HandleUserResponse(message, registrationData);
-                                }
-                                else if (message.Text.StartsWith("/"))
-                                {
-                                    await HandleCommand(message);
                                 }
                             }
                         }
@@ -139,7 +140,7 @@ namespace PowerOutageNotifier
                 case UserRegistrationState.AwaitingDistrictName:
                     registrationData.UserData.DistrictName = message.Text;
                     registrationData.State = UserRegistrationState.AwaitingStreetName;
-                    await SendMessageAsync(chatId, "Please enter your street name in ЋИРИЛИЦА:");
+                    await SendMessageAsync(chatId, "Please enter your street name, without the number, in ЋИРИЛИЦА:");
                     break;
                 case UserRegistrationState.AwaitingStreetName:
                     registrationData.UserData.StreetName = message.Text;
@@ -182,6 +183,7 @@ namespace PowerOutageNotifier
             userDataList.Add(userData);
             UserDataStore.WriteUserData(userDataList); // Persist the new user
             await SendMessageAsync(userData.ChatId, $"You have been successfully registered as {userData.FriendlyName}.");
+            await LogAsync($"User registered:{userData.FriendlyName}, {userData.DistrictName}, {userData.StreetName}");
         }
 
         private static async Task UnregisterUser(long chatId)
