@@ -1,0 +1,9 @@
+version: '3'
+services:
+  poweroutagenotifier:
+    image: /volume1/docker/poweroutagenotifier.tar
+    container_name: poweroutagenotifier
+    volumes:
+      - /volume1/docker/poweroutagenotifier:/config
+    environment:
+      - LOG_CHAT_ID=123456789 # Replace with your actual chat ID
