@@ -51,16 +51,18 @@ namespace PowerOutageNotifier
 
             LogAsync($"Service running on {Environment.MachineName}").GetAwaiter().GetResult();
 
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 while (true)
                 {
                     try
                     {
-                        Task.Run(CheckAndNotifyPowerOutage);
-                        Task.Run(CheckAndNotifyWaterOutage);
-                        Task.Run(CheckAndNotifyUnplannedWaterOutage);
-                        Task.Run(CheckAndNotifyParkingTickets);
+                        await Task.WhenAll(
+                            CheckAndNotifyPowerOutageAsync(),
+                            CheckAndNotifyWaterOutageAsync(),
+                            CheckAndNotifyUnplannedWaterOutageAsync(),
+                            CheckAndNotifyParkingTicketsAsync());
+
                         Thread.Sleep(frequency.Value);
                     }
                     catch (Exception ex)
@@ -87,7 +89,7 @@ namespace PowerOutageNotifier
             await botClient.SendTextMessageAsync(chatId, message);
         }
 
-        public static void CheckAndNotifyPowerOutage()
+        public static async Task CheckAndNotifyPowerOutageAsync()
         {
             foreach (string url in powerOutageUrls)
             {
@@ -129,12 +131,14 @@ namespace PowerOutageNotifier
                                 string streetWithNumber = streets.Substring(streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase));
                                 streetWithNumber = streetWithNumber.Substring(0, streets.IndexOf(','));
 
-                                Console.WriteLine($"Power outage detected. {user.FriendlyName}, {user.DistrictName}, {streetWithNumber}, {user.ChatId}");
+                                Console.WriteLine(
+                                    $"Power outage detected. {user.FriendlyName}, {user.DistrictName}, {streetWithNumber}, {user.ChatId}");
 
                                 int daysLeftUntilOutage = powerOutageUrls.IndexOf(url);
 
-                                SendMessageAsync(user.ChatId, $"Power outage will occur in {daysLeftUntilOutage} days in {user.DistrictName}, {streetWithNumber}.")
-                                    .GetAwaiter().GetResult();
+                                await SendMessageAsync(
+                                    user.ChatId,
+                                    $"Power outage will occur in {daysLeftUntilOutage} days in {user.DistrictName}, {streetWithNumber}.");
                             }
                         }
                     }
@@ -142,7 +146,7 @@ namespace PowerOutageNotifier
             }
         }
 
-        public static void CheckAndNotifyWaterOutage()
+        public static async Task CheckAndNotifyWaterOutageAsync()
         {
             foreach (string url in waterOutageUrls)
             {
@@ -173,10 +177,12 @@ namespace PowerOutageNotifier
                             if (nodeText.IndexOf(user.DistrictName, StringComparison.OrdinalIgnoreCase) >= 0
                                 && nodeText.IndexOf(declinationRoot, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                Console.WriteLine($"Water outage detected. {user.FriendlyName}, {user.DistrictName}, {user.StreetName}, {user.ChatId}");
+                                Console.WriteLine(
+                                    $"Water outage detected. {user.FriendlyName}, {user.DistrictName}, {user.StreetName}, {user.ChatId}");
 
-                                SendMessageAsync(user.ChatId, $"Water outage might occurr in {user.DistrictName}, {user.StreetName}.\n{nodeText}")
-                                    .GetAwaiter().GetResult();
+                                await SendMessageAsync(
+                                    user.ChatId,
+                                    $"Water outage might occurr in {user.DistrictName}, {user.StreetName}.\n{nodeText}");
                             }
                         }
                     }
@@ -184,7 +190,7 @@ namespace PowerOutageNotifier
             }
         }
 
-        public static void CheckAndNotifyUnplannedWaterOutage()
+        public static async Task CheckAndNotifyUnplannedWaterOutageAsync()
         {
             foreach (string url in waterUnplannedOutageUrls)
             {
@@ -224,8 +230,9 @@ namespace PowerOutageNotifier
                                     {
                                         Console.WriteLine($"Water outage detected. {user.FriendlyName}, {user.DistrictName}, {user.StreetName}, {user.ChatId}");
 
-                                        SendMessageAsync(user.ChatId, $"Water outage might be happening in {user.DistrictName}, {user.StreetName}.\n{text}")
-                                            .GetAwaiter().GetResult();
+                                        await SendMessageAsync(
+                                            user.ChatId,
+                                            $"Water outage might be happening in {user.DistrictName}, {user.StreetName}.\n{text}");
                                     }
                                 }
                             }
@@ -235,7 +242,7 @@ namespace PowerOutageNotifier
             }
         }
 
-        public static void CheckAndNotifyParkingTickets()
+        public static async Task CheckAndNotifyParkingTicketsAsync()
         {
             string licensePlate = "BG677XX";
             string url = "https://www.parking-servis.co.rs/lat/edpk";
@@ -269,21 +276,19 @@ namespace PowerOutageNotifier
                 }
                 else
                 {
-                    SendMessageAsync(
+                    await SendMessageAsync(
                         userDataList.Where(
                             user => user.FriendlyName != null && user.FriendlyName.Contains("Ajanko"))
                         .First()
                         .ChatId,
-                        $"There is a parking fine at {url}")
-                        .GetAwaiter().GetResult();
+                        $"There is a parking fine at {url}");
 
-                    SendMessageAsync(
+                    await SendMessageAsync(
                         userDataList.Where(
                             user => user.FriendlyName != null && user.FriendlyName.Contains("Ajanko"))
                         .First()
                         .ChatId,
-                        licensePlate)
-                        .GetAwaiter().GetResult();
+                        licensePlate);
                 }
             }
         }
