@@ -28,7 +28,7 @@ In the future, Power Outage Notifier will also provide notifications for receive
 # Usage
 
 1. Send a `/register` message to https://t.me/PowerOutageNotifierSrbijaBot
-2. Follow the prompts it gives you
+2. Answer the prompts with honesty and integrity
 3. Profit??
 
 ## Hosting your own
