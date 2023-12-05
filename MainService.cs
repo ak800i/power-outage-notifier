@@ -21,7 +21,7 @@ namespace PowerOutageNotifier
 
         private static readonly TelegramBotClient botClient = new TelegramBotClient(telegramBotToken);
 
-        public static readonly List<UserData> userDataList = ConfigReader.ReadUserData();
+        public static readonly List<UserData> userDataList = UserDataStore.ReadUserData();
 
         // URLs of the web page to scrape
         private static readonly List<string> powerOutageUrls = new List<string>
@@ -51,32 +51,132 @@ namespace PowerOutageNotifier
 
             LogAsync($"Service running on {Environment.MachineName}").GetAwaiter().GetResult();
 
-            return Task.Run(async () =>
-            {
-                while (true)
-                {
-                    try
-                    {
-                        await Task.WhenAll(
-                            CheckAndNotifyPowerOutageAsync(),
-                            CheckAndNotifyWaterOutageAsync(),
-                            CheckAndNotifyUnplannedWaterOutageAsync(),
-                            CheckAndNotifyParkingTicketsAsync());
+            Task messageReceiverTask = this.MessageReceiver(); // Start the message receiver task
 
-                        Thread.Sleep(frequency.Value);
-                    }
-                    catch (Exception ex)
+            return Task.WhenAll(
+                messageReceiverTask,
+                Task.Run(async () =>
+                {
+                    while (true)
                     {
-                        // log exception and continue
-                        LogAsync($"Exception {ex}").GetAwaiter().GetResult();
+                        try
+                        {
+                            await Task.WhenAll(
+                                CheckAndNotifyPowerOutageAsync(),
+                                CheckAndNotifyWaterOutageAsync(),
+                                CheckAndNotifyUnplannedWaterOutageAsync(),
+                                CheckAndNotifyParkingTicketsAsync());
+
+                            Thread.Sleep(frequency.Value);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogAsync($"Exception in periodic task: {ex.Message}").GetAwaiter().GetResult();
+                        }
                     }
-                }
-            });
+                })
+            );
         }
 
         public void Stop()
         {
             LogAsync($"Service stopping on {Environment.MachineName}").GetAwaiter().GetResult();
+        }
+
+        private async Task MessageReceiver()
+        {
+            int offset = 0; // Identifier of the first update to be returned
+
+            while (true)
+            {
+                try
+                {
+                    var updates = await botClient.GetUpdatesAsync(offset);
+
+                    foreach (var update in updates)
+                    {
+                        if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
+                        {
+                            var message = update.Message;
+                            if (message != null && message.Text != null && message.Text.StartsWith("/"))
+                            {
+                                await HandleCommand(message);
+                            }
+                        }
+
+                        offset = update.Id + 1;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception
+                    LogAsync($"MessageReceiver Exception: {ex.Message}").GetAwaiter().GetResult();
+                }
+
+                await Task.Delay(1000); // Delay to prevent excessive polling (adjust as needed)
+            }
+        }
+
+        private static readonly Dictionary<long, (UserRegistrationState State, UserData UserData)> userRegistrationData = new Dictionary<long, (UserRegistrationState, UserData)>();
+
+        private static async Task HandleCommand(Message message)
+        {
+            if (message == null || message.Text == null)
+            {
+                return;
+            }
+            var messageText = message.Text.Split(' ');
+
+            switch (messageText.First())
+            {
+                case "/register":
+                    // Expecting format: /register FriendlyName DistrictName StreetName
+                    if (messageText.Length < 4)
+                    {
+                        await SendMessageAsync(message.Chat.Id, "Please provide all required data: Friendly Name, District Name, and Street Name.");
+                    }
+                    else
+                    {
+                        string friendlyName = messageText[1];
+                        string districtName = messageText[2];
+                        string streetName = string.Join(" ", messageText.Skip(3)); // Assuming street name can have spaces
+
+                        await RegisterUser(message.Chat.Id, friendlyName, districtName, streetName);
+                    }
+                    break;
+                    // Add more commands as needed
+            }
+        }
+
+        private static async Task RegisterUser(long chatId, string friendlyName, string districtName, string streetName)
+        {
+            // Check if FriendlyName is unique
+            if (userDataList.Any(u => u.FriendlyName == friendlyName))
+            {
+                await SendMessageAsync(chatId, "The friendly name is already in use. Please choose a different one.");
+                return;
+            }
+
+            // Check if user is already registered
+            if (userDataList.Any(u => u.ChatId == chatId))
+            {
+                await SendMessageAsync(chatId, "You are already registered.");
+                return;
+            }
+
+            // Create and add the new user
+            UserData newUser = new UserData
+            {
+                ChatId = chatId,
+                FriendlyName = friendlyName,
+                DistrictName = districtName,
+                StreetName = streetName
+            };
+
+            userDataList.Add(newUser);
+            UserDataStore.WriteUserData(userDataList); // Save the updated user data list
+
+            await SendMessageAsync(chatId, "You have been successfully registered.");
         }
 
         private static async Task LogAsync(string message)
