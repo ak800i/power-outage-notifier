@@ -33,7 +33,7 @@ In the future, Power Outage Notifier will also provide notifications for receive
 
 ## Hosting your own
 
-If you want to host your own using Docker, getting started is as simple as using the following docker-compse:
+If you want to host your own using Docker, getting started is as simple as using the following docker-compose:
 
 > See [docker-compose.yml](./docker-compose.yml) for a docker-compose file.
 
