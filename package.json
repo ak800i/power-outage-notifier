@@ -22,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/ak800i/power-outage-notifier/issues"
   },
-  "homepage": "https://github.com/ak800i/power-outage-notifier#readme"
+  "homepage": "https://github.com/ak800i/power-outage-notifier#readme",
+  "publishConfig": {
+    "@ak800i:registry": "https://ghcr.io"
+  }
 }
