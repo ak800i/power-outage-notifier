@@ -1,7 +1,7 @@
 version: '3'
 services:
   poweroutagenotifier:
-    image: /volume1/docker/poweroutagenotifier.tar
+    image: belgradebc/poweroutagenotifier:latest
     container_name: poweroutagenotifier
     volumes:
       - /volume1/docker/poweroutagenotifier:/config
