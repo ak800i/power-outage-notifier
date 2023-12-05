@@ -6,7 +6,7 @@ Power Outage Notifier is a Telegram bot designed to keep you informed about vari
 
 > NOTE: Power Outage Notifier is a Work-in-Progress and still has some rough edges.
 
-## PHOTO TO HELP VISUALISE GOES HERE
+<img src="./docs/Screenshot-Telegram-small.png" alt="Alt text" height="500" />
 
 # Introduction
 
