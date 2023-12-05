@@ -235,7 +235,11 @@ namespace PowerOutageNotifier
             }
         }
 
-        private static async Task SendMessageAsync(long chatId, string message) => await botClient.SendTextMessageAsync(chatId, message);
+        private static async Task SendMessageAsync(long chatId, string message)
+        {
+            Console.WriteLine($"sending message... chatId={chatId} message={message}");
+            await botClient.SendTextMessageAsync(chatId, message);
+        }
 
         public static async Task CheckAndNotifyPowerOutageAsync()
         {
@@ -278,9 +282,6 @@ namespace PowerOutageNotifier
                             {
                                 string streetWithNumber = streets[streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase)..];
                                 streetWithNumber = streetWithNumber[..streets.IndexOf(',')];
-
-                                Console.WriteLine(
-                                    $"Power outage detected. {user.FriendlyName}, {user.DistrictName}, {streetWithNumber}, {user.ChatId}");
 
                                 int daysLeftUntilOutage = powerOutageUrls.IndexOf(url);
 
@@ -325,9 +326,6 @@ namespace PowerOutageNotifier
                             if (nodeText.IndexOf(user.DistrictName, StringComparison.OrdinalIgnoreCase) >= 0
                                 && nodeText.IndexOf(declinationRoot, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                Console.WriteLine(
-                                    $"Water outage detected. {user.FriendlyName}, {user.DistrictName}, {user.StreetName}, {user.ChatId}");
-
                                 await SendMessageAsync(
                                     user.ChatId,
                                     $"Water outage might occurr in {user.DistrictName}, {user.StreetName}.\n{nodeText}");
@@ -376,8 +374,6 @@ namespace PowerOutageNotifier
                                     if (text.IndexOf(user.DistrictName, StringComparison.OrdinalIgnoreCase) >= 0
                                         && text.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase) >= 0)
                                     {
-                                        Console.WriteLine($"Water outage detected. {user.FriendlyName}, {user.DistrictName}, {user.StreetName}, {user.ChatId}");
-
                                         await SendMessageAsync(
                                             user.ChatId,
                                             $"Water outage might be happening in {user.DistrictName}, {user.StreetName}.\n{text}");
