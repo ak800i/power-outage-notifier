@@ -10,6 +10,11 @@ namespace PowerOutageNotifier
 {
     public class MainService
     {
+        private static readonly long? logChatId =
+            long.TryParse(Environment.GetEnvironmentVariable("LOG_CHAT_ID"), out var chatId)
+                ? chatId
+                : null;
+        
         private static readonly string telegramBotToken = ConfigReader.ReadBotToken();
 
         private static readonly TelegramBotClient botClient = new TelegramBotClient(telegramBotToken);
@@ -225,7 +230,11 @@ namespace PowerOutageNotifier
 
         private static async Task LogAsync(string message)
         {
-            await botClient.SendTextMessageAsync(userDataList.First().ChatId, message);
+            Console.WriteLine(message);
+            if (logChatId.HasValue)
+            {
+                await botClient.SendTextMessageAsync(logChatId.Value, message);
+            }
         }
 
         private static async Task SendMessageAsync(long chatId, string message)
