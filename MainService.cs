@@ -3,15 +3,8 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.ServiceProcess;
-using System.Threading;
-using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PowerOutageNotifier
 {
@@ -64,8 +57,7 @@ namespace PowerOutageNotifier
                             await Task.WhenAll(
                                 CheckAndNotifyPowerOutageAsync(),
                                 CheckAndNotifyWaterOutageAsync(),
-                                CheckAndNotifyUnplannedWaterOutageAsync(),
-                                CheckAndNotifyParkingTicketsAsync());
+                                CheckAndNotifyUnplannedWaterOutageAsync());
 
                             Thread.Sleep(frequency.Value);
                         }
@@ -98,9 +90,16 @@ namespace PowerOutageNotifier
                         if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
                         {
                             var message = update.Message;
-                            if (message != null && message.Text != null && message.Text.StartsWith("/"))
+                            if (message != null && message.Text != null)
                             {
-                                await HandleCommand(message);
+                                if (userRegistrationData.TryGetValue(message.Chat.Id, out var registrationData))
+                                {
+                                    await HandleUserResponse(message, registrationData);
+                                }
+                                else if (message.Text.StartsWith("/"))
+                                {
+                                    await HandleCommand(message);
+                                }
                             }
                         }
 
@@ -117,6 +116,39 @@ namespace PowerOutageNotifier
             }
         }
 
+        private async Task HandleUserResponse(Message message, (UserRegistrationState State, UserData UserData) registrationData)
+        {
+            long chatId = message.Chat.Id;
+
+            switch (registrationData.State)
+            {
+                case UserRegistrationState.AwaitingFriendlyName:
+                    // Check if FriendlyName is unique
+                    if (userDataList.Any(u => u.FriendlyName == message.Text))
+                    {
+                        await SendMessageAsync(chatId, "This friendly name is already in use. Please start over with /register.");
+                        return;
+                    }
+
+                    registrationData.UserData.FriendlyName = message.Text;
+                    registrationData.State = UserRegistrationState.AwaitingDistrictName;
+                    await SendMessageAsync(chatId, "Please enter your district name in ЋИРИЛИЦА:");
+                    break;
+                case UserRegistrationState.AwaitingDistrictName:
+                    registrationData.UserData.DistrictName = message.Text;
+                    registrationData.State = UserRegistrationState.AwaitingStreetName;
+                    await SendMessageAsync(chatId, "Please enter your street name in ЋИРИЛИЦА:");
+                    break;
+                case UserRegistrationState.AwaitingStreetName:
+                    registrationData.UserData.StreetName = message.Text;
+                    userRegistrationData.Remove(chatId); // Registration complete
+                    await RegisterUser(registrationData.UserData);
+                    break;
+            }
+
+            userRegistrationData[chatId] = registrationData; // Update the user's registration state
+        }
+
         private static readonly Dictionary<long, (UserRegistrationState State, UserData UserData)> userRegistrationData = new Dictionary<long, (UserRegistrationState, UserData)>();
 
         private static async Task HandleCommand(Message message)
@@ -130,53 +162,65 @@ namespace PowerOutageNotifier
             switch (messageText.First())
             {
                 case "/register":
-                    // Expecting format: /register FriendlyName DistrictName StreetName
-                    if (messageText.Length < 4)
-                    {
-                        await SendMessageAsync(message.Chat.Id, "Please provide all required data: Friendly Name, District Name, and Street Name.");
-                    }
-                    else
-                    {
-                        string friendlyName = messageText[1];
-                        string districtName = messageText[2];
-                        string streetName = string.Join(" ", messageText.Skip(3)); // Assuming street name can have spaces
-
-                        await RegisterUser(message.Chat.Id, friendlyName, districtName, streetName);
-                    }
+                    userRegistrationData[message.Chat.Id] = (UserRegistrationState.AwaitingFriendlyName, new UserData { ChatId = message.Chat.Id });
+                    await SendMessageAsync(message.Chat.Id, "Please enter your friendly name:");
                     break;
-                    // Add more commands as needed
+                case "/unregister":
+                    await UnregisterUser(message.Chat.Id);
+                    break;
+                case "/aboutme":
+                    await DisplayUserInfo(message.Chat.Id);
+                    break;
             }
         }
 
-        private static async Task RegisterUser(long chatId, string friendlyName, string districtName, string streetName)
+        private static async Task RegisterUser(UserData userData)
         {
-            // Check if FriendlyName is unique
-            if (userDataList.Any(u => u.FriendlyName == friendlyName))
+            userDataList.Add(userData);
+            UserDataStore.WriteUserData(userDataList); // Persist the new user
+            await SendMessageAsync(userData.ChatId, $"You have been successfully registered as {userData.FriendlyName}.");
+        }
+
+        private static async Task UnregisterUser(long chatId)
+        {
+            var users = userDataList.Where(u => u.ChatId == chatId);
+            if (users.Count() == 0)
             {
-                await SendMessageAsync(chatId, "The friendly name is already in use. Please choose a different one.");
-                return;
+                await SendMessageAsync(chatId, "You are not registered.");
             }
-
-            // Check if user is already registered
-            if (userDataList.Any(u => u.ChatId == chatId))
+            else
             {
-                await SendMessageAsync(chatId, "You are already registered.");
-                return;
+                foreach (var user in users)
+                {
+
+                    userDataList.Remove(user);
+                    UserDataStore.WriteUserData(userDataList); // Update the stored data
+                }
+
+                await SendMessageAsync(chatId, "You have been successfully unregistered.");
             }
+        }
 
-            // Create and add the new user
-            UserData newUser = new UserData
+        private static async Task DisplayUserInfo(long chatId)
+        {
+            var users = userDataList.Where(u => u.ChatId == chatId);
+            if (users.Count() == 0)
             {
-                ChatId = chatId,
-                FriendlyName = friendlyName,
-                DistrictName = districtName,
-                StreetName = streetName
-            };
+                await SendMessageAsync(chatId, "You are not currently registered.");
+            }
+            else
+            {
+                string userInfo = "";
+                foreach (var user in users)
+                {
+                    userInfo +=
+                        $"Friendly Name: {user.FriendlyName}\n" +
+                        $"District Name: {user.DistrictName}\n" +
+                        $"Street Name: {user.StreetName}\n\n";
+                }
 
-            userDataList.Add(newUser);
-            UserDataStore.WriteUserData(userDataList); // Save the updated user data list
-
-            await SendMessageAsync(chatId, "You have been successfully registered.");
+                await SendMessageAsync(chatId, $"Here is the information I have on you:\n{userInfo}");
+            }
         }
 
         private static async Task LogAsync(string message)
