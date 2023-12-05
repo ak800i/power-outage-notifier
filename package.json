@@ -1,0 +1,26 @@
+{
+  "name": "@ak800i/power-outage-notifier-docker",
+  "version": "1.0.0",
+  "description": "Power outage notifications for Belgrade, Serbia",
+  "main": "index.js",
+  "scripts": {
+    "test": "exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ak800i/power-outage-notifier.git"
+  },
+  "keywords": [
+    "power",
+    "outage",
+    "notifier",
+    "serbia",
+    "srbija"
+  ],
+  "author": "Aleksa Jankovic",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ak800i/power-outage-notifier/issues"
+  },
+  "homepage": "https://github.com/ak800i/power-outage-notifier#readme"
+}
