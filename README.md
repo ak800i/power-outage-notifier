@@ -37,6 +37,17 @@ If you want to host your own using Docker, getting started is as simple as using
 
 > See [docker-compose.yml](./docker-compose.yml) for a docker-compose file.
 
+#### How to upgrade or deploy:
+```
+docker build -t poweroutagenotifier .
+docker tag poweroutagenotifier belgradebc/poweroutagenotifier
+docker save -o poweroutagenotifier.tar belgradebc/poweroutagenotifier
+```
+
+1. Upload the tar image to device.
+2. Load the image into the docker container manager.
+3. Run the [docker-compose.yml](./docker-compose.yml)
+
 # Contributing
 
 Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for instructions for how to develop and contribute to the codebase.
