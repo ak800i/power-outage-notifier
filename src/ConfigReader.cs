@@ -1,12 +1,19 @@
-﻿using System.Globalization;
-using System.IO;
-using CsvHelper;
-
-namespace PowerOutageNotifier
+﻿namespace PowerOutageNotifier
 {
     public class ConfigReader
     {
         readonly static private string botTokenFilePath = Path.Combine(Directory.GetCurrentDirectory(), "bot-token.txt");
+
+        static ConfigReader()
+        {
+#if DEBUG
+            // Path when in Debug mode (local Windows file)
+            botTokenFilePath = Path.Combine(Directory.GetCurrentDirectory(), "bot-token.txt");
+#else
+            // Path when in Release mode (Docker volume)
+            botTokenFilePath = Path.Combine("/config", "bot-token.txt");
+#endif
+        }
 
         /// <summary>
         /// Example file contents:
