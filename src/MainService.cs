@@ -1,13 +1,13 @@
-﻿using HtmlAgilityPack;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Support.UI;
-using SeleniumExtras.WaitHelpers;
-using Telegram.Bot;
-using Telegram.Bot.Types;
-
-namespace PowerOutageNotifier
+﻿namespace PowerOutageNotifier
 {
+    using HtmlAgilityPack;
+    using OpenQA.Selenium;
+    using OpenQA.Selenium.Chrome;
+    using OpenQA.Selenium.Support.UI;
+    using SeleniumExtras.WaitHelpers;
+    using Telegram.Bot;
+    using Telegram.Bot.Types;
+
     /// <summary>
     /// This class contains the main service logic.
     /// </summary>
@@ -105,7 +105,7 @@ namespace PowerOutageNotifier
                             Message? message = update.Message;
                             if (message != null && message.Text != null)
                             {
-                                if (message.Text.StartsWith("/")) 
+                                if (message.Text.StartsWith("/"))
                                 {
                                     _ = userRegistrationData.Remove(message.Chat.Id);
                                     await HandleCommand(message);
@@ -253,7 +253,7 @@ namespace PowerOutageNotifier
         private static async Task SendMessageAsync(long chatId, string message)
         {
             Console.WriteLine($"sending message... chatId={chatId} message={message}");
-            await botClient.SendTextMessageAsync(chatId, message);
+            _ = await botClient.SendTextMessageAsync(chatId, message);
         }
 
         /// <summary>

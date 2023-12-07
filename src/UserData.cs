@@ -23,7 +23,7 @@
         /// <summary>
         /// The name of the municipality the user subscribes for.
         /// </summary>
-        [Name("District Name")]
+        [Name("Municipality Name")]
         public string? MunicipalityName { get; set; }
 
         /// <summary>

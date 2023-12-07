@@ -1,7 +1,7 @@
-﻿using System.Text;
-
-namespace PowerOutageNotifier
+﻿namespace PowerOutageNotifier
 {
+    using System.Text;
+
     /// <summary>
     /// Class for converting Latin text to Cyrillic text.
     /// </summary>
