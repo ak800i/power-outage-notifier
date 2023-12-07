@@ -112,7 +112,7 @@ namespace PowerOutageNotifier
                 catch (Exception ex)
                 {
                     // Log the exception
-                    LogAsync($"MessageReceiver Exception: {ex.Message}").GetAwaiter().GetResult();
+                    await LogAsync($"MessageReceiver Exception: {ex}");
                 }
 
                 await Task.Delay(1000); // Delay to prevent excessive polling
