@@ -8,6 +8,7 @@
   <!-- Set platform properties. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
 
     <AppendRuntimeIdentifierToOutputPath Condition=" '$(AppendRuntimeIdentifierToOutputPath)' == ''">false</AppendRuntimeIdentifierToOutputPath>
 
@@ -38,6 +39,16 @@
     <EnlistmentRoot>$(MSBuildThisFileDirectory.TrimEnd('\\'))</EnlistmentRoot>
     <SourceProjectPath>$(EnlistmentRoot)\src\</SourceProjectPath>
     <TestProjectPath>$(EnlistmentRoot)\test\</TestProjectPath>
+  </PropertyGroup>
+
+  <!-- Set path properties for intermediate files. By default all files end up in 'out/obj'. -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath Condition=" '$(BaseIntermediateOutputPath)' == '' ">$(BuildOutputRoot)obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <IntermediateOutputPath Condition=" '$(IntermediateOutputPath)' == '' ">$(BaseIntermediateOutputPath)$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <!-- Set the root path for all build output artifacts. -->

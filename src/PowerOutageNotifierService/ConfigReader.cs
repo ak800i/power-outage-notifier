@@ -1,4 +1,4 @@
-﻿namespace PowerOutageNotifier
+﻿namespace PowerOutageNotifier.PowerOutageNotifierService
 {
     /// <summary>
     /// Configuration reader.

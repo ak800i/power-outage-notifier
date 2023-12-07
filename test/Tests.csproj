@@ -17,7 +17,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\src\PowerOutageNotifier.csproj" />
+    <ProjectReference Include="..\src\PowerOutageNotifierService\PowerOutageNotifier.csproj" />
   </ItemGroup>
 
 </Project>

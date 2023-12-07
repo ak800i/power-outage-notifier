@@ -1,4 +1,4 @@
-﻿namespace PowerOutageNotifier
+﻿namespace PowerOutageNotifier.PowerOutageNotifierService
 {
     using HtmlAgilityPack;
     using OpenQA.Selenium;
@@ -201,7 +201,7 @@
 
         private static async Task UnregisterUser(long chatId)
         {
-            IEnumerable<UserData> users = userDataList.Where(u => u.ChatId == chatId);
+            IEnumerable<UserData> users = userDataList.Where(u => u.ChatId == chatId).ToList();
             if (users.Count() == 0)
             {
                 await SendMessageAsync(chatId, "You are not registered.");
@@ -212,9 +212,9 @@
                 {
 
                     _ = userDataList.Remove(user);
-                    UserDataStore.WriteUserData(userDataList); // Update the stored data
                 }
 
+                UserDataStore.WriteUserData(userDataList); // Update the stored data
                 await SendMessageAsync(chatId, "You have been successfully unregistered.");
             }
         }

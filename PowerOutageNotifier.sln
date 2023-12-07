@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerOutageNotifier", "src\PowerOutageNotifier.csproj", "{E1A7A22C-1658-4746-B2AC-34CB21FEAFD8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerOutageNotifier", "src\PowerOutageNotifierService\PowerOutageNotifier.csproj", "{E1A7A22C-1658-4746-B2AC-34CB21FEAFD8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "test\Tests.csproj", "{AE08CC12-6FBD-4861-8F00-E4C3A1F13CAB}"
 EndProject

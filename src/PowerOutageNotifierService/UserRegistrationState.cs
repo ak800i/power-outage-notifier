@@ -1,4 +1,4 @@
-﻿namespace PowerOutageNotifier
+﻿namespace PowerOutageNotifier.PowerOutageNotifierService
 {
     /// <summary>
     /// Enum representing the state of the user registration process.

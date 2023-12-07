@@ -1,6 +1,6 @@
 ﻿namespace Tests
 {
-    using PowerOutageNotifier;
+    using PowerOutageNotifier.PowerOutageNotifierService;
 
     /// <summary>
     /// Tests for the <see cref="LatinToCyrillicConverter"/> class.

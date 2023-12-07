@@ -3,9 +3,9 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY ["src/PowerOutageNotifier.csproj", "."]
+COPY ["src/PowerOutageNotifierService/PowerOutageNotifier.csproj", "."]
 RUN dotnet restore "./PowerOutageNotifier.csproj"
-COPY . .
+COPY ["src/PowerOutageNotifierService/", "."]
 WORKDIR "/src/."
 RUN dotnet build "PowerOutageNotifier.csproj" -c Release -o /app/build
 

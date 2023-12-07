@@ -1,4 +1,4 @@
-﻿namespace PowerOutageNotifier
+﻿namespace PowerOutageNotifier.PowerOutageNotifierService
 {
     using CsvHelper;
     using System.Collections.Generic;
