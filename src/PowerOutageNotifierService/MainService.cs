@@ -91,6 +91,7 @@
         private async Task MessageReceiver()
         {
             int offset = 0; // Identifier of the first update to be returned
+            // TODO - do we need to persist this offset?
 
             while (true)
             {
@@ -216,6 +217,12 @@
 
                 UserDataStore.WriteUserData(userDataList); // Update the stored data
                 await SendMessageAsync(chatId, "You have been successfully unregistered.");
+
+
+                foreach (UserData? user in users)
+                {
+                    await LogAsync($"User unregistered:{user.FriendlyName}, {user.MunicipalityName}, {user.StreetName}");
+                }
             }
         }
 
