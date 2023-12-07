@@ -218,7 +218,6 @@
                 UserDataStore.WriteUserData(userDataList); // Update the stored data
                 await SendMessageAsync(chatId, "You have been successfully unregistered.");
 
-
                 foreach (UserData? user in users)
                 {
                     await LogAsync($"User unregistered:{user.FriendlyName}, {user.MunicipalityName}, {user.StreetName}");
