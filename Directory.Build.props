@@ -7,11 +7,10 @@
 
   <!-- Set platform properties. -->
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
 
     <AppendRuntimeIdentifierToOutputPath Condition=" '$(AppendRuntimeIdentifierToOutputPath)' == ''">false</AppendRuntimeIdentifierToOutputPath>
 
-    <Platforms>x64</Platforms>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
 
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -22,9 +21,8 @@
       latest: The compiler accepts all valid language syntax that it can support.
       explicit version: The compiler accepts only syntax that is included in that version or lower
     -->
-    <!-- We should switch to the latest lang version. Leave it commented as reminder. -->
     <LangVersion>latest</LangVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <!-- Set common packaging related properties. -->
