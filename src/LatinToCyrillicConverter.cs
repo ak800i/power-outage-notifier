@@ -2,9 +2,9 @@
 
 namespace PowerOutageNotifier
 {
-    internal static class LatinToCyrillicConverter
+    public static class LatinToCyrillicConverter
     {
-        private static string ConvertLatinToCyrillic(string latinText)
+        public static string ConvertLatinToCyrillic(string latinText)
         {
             Dictionary<string, string> latinToCyrillicMap = new Dictionary<string, string>
             {
