@@ -443,6 +443,8 @@
             // Set up ChromeDriver
             ChromeOptions options = new ChromeOptions();
             options.AddArgument("--headless"); // Run in headless mode (without opening a browser window)
+            options.AddArgument("--no-sandbox"); // Necessary for running Chrome in the containerized environment.
+            options.AddArgument("--disable-dev-shm-usage"); // Helps avoid shared memory issues in Docker.
             using IWebDriver driver = new ChromeDriver(options);
             driver.Navigate().GoToUrl(url);
 
@@ -456,7 +458,7 @@
             submitButton.Click();
 
             // Wait for the presence of the result message
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
             By resultLocator = By.CssSelector("div.entry-text.no-edpk-message");
             IWebElement resultElement = wait.Until(ExpectedConditions.ElementIsVisible(resultLocator));
 

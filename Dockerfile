@@ -2,7 +2,8 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 # Install necessary tools
 RUN apt-get update -y \
-    && apt-get install -y wget gnupg2 software-properties-common curl unzip
+    && apt-get install -y wget gnupg2 software-properties-common curl unzip \
+    && apt-get install -y libglib2.0-0 libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libgtk-3-0
 
 # Add Google Chrome to the repositories
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-linux-keyring.gpg \
