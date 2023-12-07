@@ -45,12 +45,6 @@
     <BuildOutputRoot Condition=" '$(BuildOutputRoot)' == '' ">$(EnlistmentRoot)\out\</BuildOutputRoot>
   </PropertyGroup>
 
-  <!-- Set path properties for intermediate files. By default all files end up in 'out/obj'. -->
-  <PropertyGroup>
-    <BaseIntermediateOutputPath Condition=" '$(BaseIntermediateOutputPath)' == '' ">$(BuildOutputRoot)obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
-    <IntermediateOutputPath Condition=" '$(IntermediateOutputPath)' == '' ">$(BaseIntermediateOutputPath)$(Configuration)\</IntermediateOutputPath>
-  </PropertyGroup>
-
   <!-- Set path properties for published files. By default all files end up in 'out/publish'. -->
   <PropertyGroup>
     <IsPublishable Condition=" '$(IsPublishable)' == '' ">false</IsPublishable>
