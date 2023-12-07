@@ -7,7 +7,6 @@ namespace PowerOutageNotifier
     {
         readonly static private string botTokenFilePath = Path.Combine(Directory.GetCurrentDirectory(), "bot-token.txt");
 
-
         /// <summary>
         /// Example file contents:
         /// 
