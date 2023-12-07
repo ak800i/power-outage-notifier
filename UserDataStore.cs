@@ -13,7 +13,7 @@ namespace PowerOutageNotifier
         /// <summary>
         /// Example file contents:
         /// 
-        /// Friendly Name,Chat ID,District Name,Street Name
+        /// Friendly Name,Chat ID,Municipality Name,Street Name
         /// PositiveTest,123456,Палилула,САВЕ МРКАЉА
         /// </summary>
         readonly static private string csvFilePath;
@@ -35,7 +35,7 @@ namespace PowerOutageNotifier
             if (!File.Exists(csvFilePath))
             {
                 // Create an empty file with just the headers
-                File.WriteAllText(csvFilePath, "Friendly Name,Chat ID,District Name,Street Name\n");
+                File.WriteAllText(csvFilePath, "Friendly Name,Chat ID,Municipality Name,Street Name\n");
             }
 
             using var reader = new StreamReader(csvFilePath);

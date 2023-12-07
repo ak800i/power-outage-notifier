@@ -14,13 +14,13 @@ If you've ever found yourself wishing you had advance notice of power or water o
 
 # Features
 ### 1. ⚡ Planned Power Outage Notifications
-Receive timely alerts whenever there is a scheduled power outage in Belgrade. Stay informed about the affected districts and streets well in advance.
+Receive timely alerts whenever there is a scheduled power outage in Belgrade. Stay informed about the affected municipalities and streets well in advance.
 
 ### 2. 💧 Planned Water Outage Notifications
 Get notifications for planned water outages in Belgrade. Know the details of the affected areas and streets to plan accordingly.
 
 ### 3. 💧 Unplanned Water Outage Notifications
-Stay updated on unplanned water outages happening in Belgrade. Receive immediate alerts with information about the affected districts and streets.
+Stay updated on unplanned water outages happening in Belgrade. Receive immediate alerts with information about the affected municipalities and streets.
 
 ### 4. 🅿️ Parking Fine Notifications (Coming Soon)
 In the future, Power Outage Notifier will also provide notifications for received parking fines in Belgrade, helping you stay on top of any fines issued.

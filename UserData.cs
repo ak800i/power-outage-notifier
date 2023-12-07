@@ -11,7 +11,7 @@ namespace PowerOutageNotifier
         public long ChatId { get; set; }
 
         [Name("District Name")]
-        public string? DistrictName { get; set; }
+        public string? MunicipalityName { get; set; }
 
         [Name("Street Name")]
         public string? StreetName { get; set; }

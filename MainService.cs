@@ -134,11 +134,11 @@ namespace PowerOutageNotifier
                     }
 
                     registrationData.UserData.FriendlyName = message.Text;
-                    registrationData.State = UserRegistrationState.AwaitingDistrictName;
-                    await SendMessageAsync(chatId, "Please enter your district name in ЋИРИЛИЦА:");
+                    registrationData.State = UserRegistrationState.AwaitingMunicipalityName;
+                    await SendMessageAsync(chatId, "Please enter your municipality name in ЋИРИЛИЦА:");
                     break;
-                case UserRegistrationState.AwaitingDistrictName:
-                    registrationData.UserData.DistrictName = message.Text;
+                case UserRegistrationState.AwaitingMunicipalityName:
+                    registrationData.UserData.MunicipalityName = message.Text;
                     registrationData.State = UserRegistrationState.AwaitingStreetName;
                     await SendMessageAsync(chatId, "Please enter your street name, without the number, in ЋИРИЛИЦА:");
                     break;
@@ -183,7 +183,7 @@ namespace PowerOutageNotifier
             userDataList.Add(userData);
             UserDataStore.WriteUserData(userDataList); // Persist the new user
             await SendMessageAsync(userData.ChatId, $"You have been successfully registered as {userData.FriendlyName}.");
-            await LogAsync($"User registered:{userData.FriendlyName}, {userData.DistrictName}, {userData.StreetName}");
+            await LogAsync($"User registered:{userData.FriendlyName}, {userData.MunicipalityName}, {userData.StreetName}");
         }
 
         private static async Task UnregisterUser(long chatId)
@@ -220,7 +220,7 @@ namespace PowerOutageNotifier
                 {
                     userInfo +=
                         $"Friendly Name: {user.FriendlyName}\n" +
-                        $"District Name: {user.DistrictName}\n" +
+                        $"Municipality Name: {user.MunicipalityName}\n" +
                         $"Street Name: {user.StreetName}\n\n";
                 }
 
@@ -265,8 +265,8 @@ namespace PowerOutageNotifier
                     // Check if the row has the correct number of cells
                     if (cells != null && cells.Count >= 3)
                     {
-                        // Get the district name from the first cell
-                        string district = cells[0].InnerText.Trim();
+                        // Get the municipality name from the first cell
+                        string municipality = cells[0].InnerText.Trim();
 
                         // Get the street name from the second cell
                         string streets = cells[2].InnerText.Trim();
@@ -278,8 +278,8 @@ namespace PowerOutageNotifier
                                 continue;
                             }
 
-                            // Check if the street name occurs in the same row as the correct district name
-                            if (district == user.DistrictName
+                            // Check if the street name occurs in the same row as the correct municipality name
+                            if (municipality == user.MunicipalityName
                                 && streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
                                 string streetWithNumber = streets[streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase)..];
@@ -289,7 +289,7 @@ namespace PowerOutageNotifier
 
                                 await SendMessageAsync(
                                     user.ChatId,
-                                    $"Power outage will occur in {daysLeftUntilOutage} days in {user.DistrictName}, {streetWithNumber}.");
+                                    $"Power outage will occur in {daysLeftUntilOutage} days in {user.MunicipalityName}, {streetWithNumber}.");
                             }
                         }
                     }
@@ -317,20 +317,20 @@ namespace PowerOutageNotifier
                         foreach (UserData user in userDataList)
                         {
                             if (user.StreetName == null
-                                || user.DistrictName == null)
+                                || user.MunicipalityName == null)
                             {
                                 continue;
                             }
 
                             string declinationRoot = user.StreetName[..^2];
 
-                            // Check if the street name occurs in the same entry as the correct district name
-                            if (nodeText.IndexOf(user.DistrictName, StringComparison.OrdinalIgnoreCase) >= 0
+                            // Check if the street name occurs in the same entry as the correct municipality name
+                            if (nodeText.IndexOf(user.MunicipalityName, StringComparison.OrdinalIgnoreCase) >= 0
                                 && nodeText.IndexOf(declinationRoot, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
                                 await SendMessageAsync(
                                     user.ChatId,
-                                    $"Water outage might occurr in {user.DistrictName}, {user.StreetName}.\n{nodeText}");
+                                    $"Water outage might occurr in {user.MunicipalityName}, {user.StreetName}.\n{nodeText}");
                             }
                         }
                     }
@@ -367,18 +367,18 @@ namespace PowerOutageNotifier
                                 foreach (UserData user in userDataList)
                                 {
                                     if (user.StreetName == null
-                                        || user.DistrictName == null)
+                                        || user.MunicipalityName == null)
                                     {
                                         continue;
                                     }
 
                                     // Example: Check for the string "example" in each li element (case-insensitive)
-                                    if (text.IndexOf(user.DistrictName, StringComparison.OrdinalIgnoreCase) >= 0
+                                    if (text.IndexOf(user.MunicipalityName, StringComparison.OrdinalIgnoreCase) >= 0
                                         && text.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase) >= 0)
                                     {
                                         await SendMessageAsync(
                                             user.ChatId,
-                                            $"Water outage might be happening in {user.DistrictName}, {user.StreetName}.\n{text}");
+                                            $"Water outage might be happening in {user.MunicipalityName}, {user.StreetName}.\n{text}");
                                     }
                                 }
                             }

@@ -4,7 +4,7 @@
     {
         None,
         AwaitingFriendlyName,
-        AwaitingDistrictName,
+        AwaitingMunicipalityName,
         AwaitingStreetName,
     }
 }
