@@ -80,8 +80,7 @@
                             await Task.WhenAll(
                                 CheckAndNotifyPowerOutageAsync(),
                                 CheckAndNotifyWaterOutageAsync(),
-                                CheckAndNotifyUnplannedWaterOutageAsync(),
-                                CheckAndNotifyParkingTicketsAsync());
+                                CheckAndNotifyUnplannedWaterOutageAsync());
 
                             Thread.Sleep(frequency.Value);
                         }
