@@ -1,10 +1,13 @@
 version: '3'
 services:
+  selenium-chrome:
+    image: selenium/standalone-chrome:latest
+    ports:
+      - "4444:4444" # Optional: Expose the Selenium port if needed
   poweroutagenotifier:
     image: belgradebc/poweroutagenotifier:latest
     container_name: poweroutagenotifier
     volumes:
-      - /volume1/docker/poweroutagenotifier:/config
+      - K:/Code/power-outage-notifier-docker/docker-win:/config
     environment:
       - LOG_CHAT_ID=-940135430 # Replace with your actual chat ID
-      - enable_reader_on_bot=True
