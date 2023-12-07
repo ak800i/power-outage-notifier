@@ -135,15 +135,15 @@ namespace PowerOutageNotifier
 
                     registrationData.UserData.FriendlyName = message.Text;
                     registrationData.State = UserRegistrationState.AwaitingMunicipalityName;
-                    await SendMessageAsync(chatId, "Please enter your municipality name in ЋИРИЛИЦА:");
+                    await SendMessageAsync(chatId, "Please enter your EXACT municipality name (example: Novi Beograd)");
                     break;
                 case UserRegistrationState.AwaitingMunicipalityName:
-                    registrationData.UserData.MunicipalityName = message.Text;
+                    registrationData.UserData.MunicipalityName = LatinToCyrillicConverter.ConvertLatinToCyrillic(message.Text);
                     registrationData.State = UserRegistrationState.AwaitingStreetName;
-                    await SendMessageAsync(chatId, "Please enter your street name, without the number, in ЋИРИЛИЦА:");
+                    await SendMessageAsync(chatId, "Please enter your EXACT street name, without the number (example: Husinjskih Rudara)");
                     break;
                 case UserRegistrationState.AwaitingStreetName:
-                    registrationData.UserData.StreetName = message.Text;
+                    registrationData.UserData.StreetName = LatinToCyrillicConverter.ConvertLatinToCyrillic(message.Text);
                     _ = userRegistrationData.Remove(chatId); // Registration complete
                     await RegisterUser(registrationData.UserData);
                     break;

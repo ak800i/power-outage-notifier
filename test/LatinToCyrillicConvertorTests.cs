@@ -12,6 +12,7 @@
             Assert.AreEqual("Хусињских рудара".ToUpper(), LatinToCyrillicConverter.ConvertLatinToCyrillic("HUSINJSKIH RUDARA"));
             Assert.AreEqual("Хусињских рудара".ToUpper(), LatinToCyrillicConverter.ConvertLatinToCyrillic("HUSINjSKIH RUDARA"));
             Assert.AreEqual("Хусињских рудара 88".ToUpper(), LatinToCyrillicConverter.ConvertLatinToCyrillic("HUSINjSKIH RUDARA 88"));
+            Assert.AreEqual("Хусињских рудара", LatinToCyrillicConverter.ConvertLatinToCyrillic("Хусињских рудара"));
         }
     }
 }

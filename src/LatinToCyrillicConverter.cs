@@ -4,8 +4,13 @@ namespace PowerOutageNotifier
 {
     public static class LatinToCyrillicConverter
     {
-        public static string ConvertLatinToCyrillic(string latinText)
+        public static string? ConvertLatinToCyrillic(string? latinText)
         {
+            if (latinText == null)
+            {
+                return null;
+            }
+
             Dictionary<string, string> latinToCyrillicMap = new Dictionary<string, string>
             {
                 {"a", "а"}, {"b", "б"}, {"c", "ц"}, {"č", "ч"}, {"ć", "ћ"},
