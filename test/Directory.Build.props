@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Ensures that if this file changes, projects will be rebuilt. -->
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <!-- Import Directory.Build.props file from parent directory. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!--
+    Set path properties for output files.
+
+    By default the output files of all library projects end up in 'out/bin' while the output files of all test projects
+    end up in 'out/test/<projectname>'. This separation is made since the 'out/bin' folder is later signed by the build
+    system.
+
+    The same logic applies to the publish and package output folders.
+  -->
+  <PropertyGroup>
+    <BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(BuildOutputRoot)bin\test\$(MSBuildProjectName)\</BaseOutputPath>
+    <OutputPath Condition=" '$(OutputPath)' == '' ">$(BaseOutputPath)$(Configuration)\</OutputPath>
+
+    <PublishDir Condition=" '$(PublishDir)' == '' ">$(PublishOutputRoot)test\$(MSBuildProjectName)\$(Configuration)\</PublishDir>
+    <PackageOutputPath Condition=" '$(PackageOutputPath)' == '' ">$(PackageOutputRoot)test\bin\$(Configuration)\</PackageOutputPath>
+  </PropertyGroup>
+
+  <!--
+    Copy runtime specific assets to output directory so that the test projects can locate them.
+
+    Behavior is enabled by default for projects targeting .Net Core and needs to be explicitly
+    enabled for net472.
+  -->
+  <PropertyGroup>
+    <!-- <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> -->
+    <!-- <CopyLocalRuntimeTargetAssets>true</CopyLocalRuntimeTargetAssets> -->
+	  <!-- <UseCommonOutputDirectory>true</UseCommonOutputDirectory> -->
+  </PropertyGroup>
+</Project>
+

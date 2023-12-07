@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Ensures that if this file changes, projects will be rebuilt. -->
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <!-- Import Directory.Build.props file from parent directory. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!--
+    Set path properties for output files.
+
+    By default the output files of all library projects end up in 'out/bin' while the output files of all test projects
+    end up in 'out/test/<projectname>'. This separation is made since the 'out/bin' folder is later signed by the build
+    system.
+
+    The same logic applies to the publish and package output folders.
+  -->
+  <PropertyGroup>
+    <BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(BuildOutputRoot)bin\src\$(MSBuildProjectName)\</BaseOutputPath>
+    <OutputPath Condition=" '$(OutputPath)' == '' ">$(BaseOutputPath)$(Configuration)\</OutputPath>
+
+    <PublishDir Condition=" '$(PublishDir)' == '' ">$(PublishOutputRoot)src\$(MSBuildProjectName)\$(Configuration)\</PublishDir>
+    <PackageOutputPath Condition=" '$(PackageOutputPath)' == '' ">$(PackageOutputRoot)bin\$(Configuration)\</PackageOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
+  </PropertyGroup>
+</Project>
