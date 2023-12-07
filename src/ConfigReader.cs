@@ -1,5 +1,8 @@
 ﻿namespace PowerOutageNotifier
 {
+    /// <summary>
+    /// Configuration reader.
+    /// </summary>
     public class ConfigReader
     {
         readonly static private string botTokenFilePath = Path.Combine(Directory.GetCurrentDirectory(), "bot-token.txt");

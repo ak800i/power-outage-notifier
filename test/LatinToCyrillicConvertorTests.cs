@@ -2,11 +2,17 @@
 {
     using PowerOutageNotifier;
 
+    /// <summary>
+    /// Tests for the <see cref="LatinToCyrillicConverter"/> class.
+    /// </summary>
     [TestClass]
     public class LatinToCyrillicConverterTests
     {
+        /// <summary>
+        /// Tests the <see cref="LatinToCyrillicConverter.ConvertLatinToCyrillic(string)"/> method.
+        /// </summary>
         [TestMethod]
-        public void TestMethod1()
+        public void ConvertLatinToCyrillicTest()
         {
             Assert.AreEqual("Хусињских рудара", LatinToCyrillicConverter.ConvertLatinToCyrillic("Husinjskih rudara"));
             Assert.AreEqual("Хусињских рудара".ToUpper(), LatinToCyrillicConverter.ConvertLatinToCyrillic("HUSINJSKIH RUDARA"));

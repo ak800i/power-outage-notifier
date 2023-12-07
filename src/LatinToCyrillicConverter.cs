@@ -2,8 +2,16 @@
 
 namespace PowerOutageNotifier
 {
+    /// <summary>
+    /// Class for converting Latin text to Cyrillic text.
+    /// </summary>
     public static class LatinToCyrillicConverter
     {
+        /// <summary>
+        /// Converts Latin text to Cyrillic text.
+        /// </summary>
+        /// <param name="latinText">Text in latin.</param>
+        /// <returns>Text in cyrillic.</returns>
         public static string? ConvertLatinToCyrillic(string? latinText)
         {
             if (latinText == null)

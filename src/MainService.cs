@@ -8,6 +8,9 @@ using Telegram.Bot.Types;
 
 namespace PowerOutageNotifier
 {
+    /// <summary>
+    /// This class contains the main service logic.
+    /// </summary>
     public class MainService
     {
         private static readonly long? logChatId =
@@ -19,7 +22,7 @@ namespace PowerOutageNotifier
 
         private static readonly TelegramBotClient botClient = new TelegramBotClient(telegramBotToken);
 
-        public static readonly List<UserData> userDataList = UserDataStore.ReadUserData();
+        private static readonly List<UserData> userDataList = UserDataStore.ReadUserData();
 
         // URLs of the web page to scrape
         private static readonly List<string> powerOutageUrls =
@@ -40,6 +43,11 @@ namespace PowerOutageNotifier
             "https://www.bvk.rs/kvarovi-na-mrezi/",
         ];
 
+        /// <summary>
+        /// Starts the service.
+        /// </summary>
+        /// <param name="frequency">How often the scraping should occur.</param>
+        /// <returns>Awaitable void.</returns>
         public Task Start(TimeSpan? frequency = null)
         {
             if (frequency == null)
@@ -75,6 +83,9 @@ namespace PowerOutageNotifier
             );
         }
 
+        /// <summary>
+        /// Stops the service.
+        /// </summary>
         public void Stop() => LogAsync($"Service stopping on {Environment.MachineName}").GetAwaiter().GetResult();
 
         private async Task MessageReceiver()
@@ -245,6 +256,10 @@ namespace PowerOutageNotifier
             await botClient.SendTextMessageAsync(chatId, message);
         }
 
+        /// <summary>
+        /// Checks for power outages and notifies the users.
+        /// </summary>
+        /// <returns>Awaitable void.</returns>
         public static async Task CheckAndNotifyPowerOutageAsync()
         {
             foreach (string url in powerOutageUrls)
@@ -299,6 +314,10 @@ namespace PowerOutageNotifier
             }
         }
 
+        /// <summary>
+        /// Checks for water outages and notifies the users.
+        /// </summary>
+        /// <returns>Awaitable void.</returns>
         public static async Task CheckAndNotifyWaterOutageAsync()
         {
             foreach (string url in waterOutageUrls)
@@ -340,6 +359,10 @@ namespace PowerOutageNotifier
             }
         }
 
+        /// <summary>
+        /// Checks for unplanned water outages and notifies the users.
+        /// </summary>
+        /// <returns>Awaitable void.</returns>
         public static async Task CheckAndNotifyUnplannedWaterOutageAsync()
         {
             foreach (string url in waterUnplannedOutageUrls)
@@ -390,7 +413,11 @@ namespace PowerOutageNotifier
             }
         }
 
-        // TODO - implement so that it can run in a docker container
+        /// <summary>
+        /// Checks for parking tickets and notifies the users.
+        /// TODO - implement so that it can run in a docker container
+        /// </summary>
+        /// <returns>Awaitable void.</returns>
         public static async Task CheckAndNotifyParkingTicketsAsync()
         {
             string licensePlate = "BG677XX";

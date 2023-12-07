@@ -1,13 +1,13 @@
-﻿using CsvHelper;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PowerOutageNotifier
+﻿namespace PowerOutageNotifier
 {
+    using CsvHelper;
+    using System.Collections.Generic;
+    using System.Globalization;
+    using System.Linq;
+
+    /// <summary>
+    /// Store which reads and writes the user data to a CSV file.
+    /// </summary>
     public class UserDataStore
     {
         /// <summary>
@@ -16,7 +16,7 @@ namespace PowerOutageNotifier
         /// Friendly Name,Chat ID,Municipality Name,Street Name
         /// PositiveTest,123456,Палилула,САВЕ МРКАЉА
         /// </summary>
-        readonly static private string csvFilePath;
+        private static readonly string csvFilePath;
 
         static UserDataStore()
         {
@@ -29,6 +29,10 @@ namespace PowerOutageNotifier
 #endif
         }
 
+        /// <summary>
+        /// Reads the user data from the store.
+        /// </summary>
+        /// <returns>List of <see cref="UserData"/> objects.</returns>
         public static List<UserData> ReadUserData()
         {
             // Check if the file exists
@@ -38,15 +42,19 @@ namespace PowerOutageNotifier
                 File.WriteAllText(csvFilePath, "Friendly Name,Chat ID,Municipality Name,Street Name\n");
             }
 
-            using var reader = new StreamReader(csvFilePath);
-            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            using StreamReader reader = new StreamReader(csvFilePath);
+            using CsvReader csv = new CsvReader(reader, CultureInfo.InvariantCulture);
             return csv.GetRecords<UserData>().ToList();
         }
 
+        /// <summary>
+        /// Writes the user data to the store.
+        /// </summary>
+        /// <param name="userDataList">The complete list of users to persist.</param>
         public static void WriteUserData(List<UserData> userDataList)
         {
-            using var writer = new StreamWriter(csvFilePath);
-            using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+            using StreamWriter writer = new StreamWriter(csvFilePath);
+            using CsvWriter csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
             csv.WriteRecords(userDataList);
         }
     }
