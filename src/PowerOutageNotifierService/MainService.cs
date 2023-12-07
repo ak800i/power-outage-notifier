@@ -14,8 +14,13 @@
     public class MainService
     {
         private static readonly long? logChatId =
-            long.TryParse(Environment.GetEnvironmentVariable("LOG_CHAT_ID"), out long chatId)
-                ? chatId
+            long.TryParse(Environment.GetEnvironmentVariable("LOG_CHAT_ID"), out long value)
+                ? value
+                : null;
+
+        private static readonly bool? enableReaderOnBot =
+            bool.TryParse(Environment.GetEnvironmentVariable("enable_reader_on_bot"), out bool value)
+                ? value
                 : null;
 
         private static readonly string telegramBotToken = ConfigReader.ReadBotToken();
@@ -57,7 +62,11 @@
 
             LogAsync($"Service running on {Environment.MachineName}").GetAwaiter().GetResult();
 
-            Task messageReceiverTask = this.MessageReceiver(); // Start the message receiver task
+            Task messageReceiverTask = Task.CompletedTask;
+            if (enableReaderOnBot.HasValue && enableReaderOnBot.Value)
+            {
+                messageReceiverTask = this.MessageReceiver(); // Start the message receiver task
+            }
 
             return Task.WhenAll(
                 messageReceiverTask,
@@ -70,13 +79,14 @@
                             await Task.WhenAll(
                                 CheckAndNotifyPowerOutageAsync(),
                                 CheckAndNotifyWaterOutageAsync(),
-                                CheckAndNotifyUnplannedWaterOutageAsync());
+                                CheckAndNotifyUnplannedWaterOutageAsync(),
+                                CheckAndNotifyParkingTicketsAsync());
 
                             Thread.Sleep(frequency.Value);
                         }
                         catch (Exception ex)
                         {
-                            LogAsync($"Exception in periodic task: {ex.Message}").GetAwaiter().GetResult();
+                            await LogAsync($"Exception in periodic task: {ex.Message}");
                         }
                     }
                 })
@@ -432,7 +442,7 @@
 
             // Set up ChromeDriver
             ChromeOptions options = new ChromeOptions();
-            //options.AddArgument("--headless"); // Run in headless mode (without opening a browser window)
+            options.AddArgument("--headless"); // Run in headless mode (without opening a browser window)
             using IWebDriver driver = new ChromeDriver(options);
             driver.Navigate().GoToUrl(url);
 
@@ -453,7 +463,7 @@
             // Check if the result element contains the keyword
             if (resultElement.Text.Contains(searchKeyword))
             {
-                Console.WriteLine($"The keyword '{searchKeyword}' was found on the website.");
+                await LogAsync($"The keyword '{searchKeyword}' was found on the website.");
             }
             else
             {
