@@ -6,7 +6,9 @@
     using OpenQA.Selenium.Remote;
     using OpenQA.Selenium.Support.UI;
     using SeleniumExtras.WaitHelpers;
+    using System.Net;
     using Telegram.Bot;
+    using Telegram.Bot.Exceptions;
     using Telegram.Bot.Types;
 
     /// <summary>
@@ -84,6 +86,17 @@
 
                             Thread.Sleep(frequency.Value);
                         }
+                        catch (WebException ex)
+                        {
+                            if (ex.Message.Contains("Resource temporarily unavailable"))
+                            {
+                                // do not log the exception
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
                         catch (Exception ex)
                         {
                             await LogAsync($"Exception in periodic task: {ex}");
@@ -96,7 +109,10 @@
         /// <summary>
         /// Stops the service.
         /// </summary>
-        public void Stop() => LogAsync($"Service stopping on {Environment.MachineName}").GetAwaiter().GetResult();
+        public void Stop() =>
+            LogAsync($"Service stopping on {Environment.MachineName}")
+            .GetAwaiter()
+            .GetResult();
 
         private async Task MessageReceiver()
         {
@@ -123,7 +139,7 @@
                                 }
                                 else if (userRegistrationData.TryGetValue(message.Chat.Id, out (UserRegistrationState State, UserData UserData) registrationData))
                                 {
-                                    await this.HandleUserResponse(message, registrationData);
+                                    await HandleUserResponse(message, registrationData);
                                 }
                             }
                         }
@@ -131,17 +147,30 @@
                         offset = update.Id + 1;
                     }
                 }
+                catch (RequestException ex)
+                {
+                    if (ex.HttpStatusCode == HttpStatusCode.ServiceUnavailable
+                        || ex.HttpStatusCode == HttpStatusCode.InternalServerError
+                        || ex.Message.Contains("Resource temporarily unavailable"))
+                    {
+                        // do not log the exception
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
                 catch (Exception ex)
                 {
                     // Log the exception
-                    await LogAsync($"MessageReceiver Exception: {ex}");
+                    await LogAsync($"MessageReceiver Exception:\n{ex}");
                 }
 
-                await Task.Delay(1000); // Delay to prevent excessive polling
+                await Task.Delay(TimeSpan.FromSeconds(2)); // Delay to prevent excessive polling
             }
         }
 
-        private async Task HandleUserResponse(Message message, (UserRegistrationState State, UserData UserData) registrationData)
+        private static async Task HandleUserResponse(Message message, (UserRegistrationState State, UserData UserData) registrationData)
         {
             long chatId = message.Chat.Id;
 
@@ -425,75 +454,6 @@
                             }
                         }
                     }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Checks for parking tickets and notifies the users.
-        /// TODO - implement so that it can run in a docker container
-        /// </summary>
-        /// <returns>Awaitable void.</returns>
-        public static async Task CheckAndNotifyParkingTicketsAsync()
-        {
-            string licensePlate = "BG677XX";
-            string url = "https://www.parking-servis.co.rs/lat/edpk";
-            string searchKeyword = "NEMA EVIDENTIRANE ELEKTRONSKE";
-
-            while (true)
-            {
-                try
-                {
-                    // Set up ChromeDriver
-                    var seleniumHubUrl = "http://selenium-chrome:4444/wd/hub";
-                    ChromeOptions options = new ChromeOptions();
-                    options.AddArgument("--headless"); // Run in headless mode (without opening a browser window)
-                    options.AddArgument("--no-sandbox"); // Necessary for running Chrome in the containerized environment.
-                    options.AddArgument("--disable-dev-shm-usage"); // Helps avoid shared memory issues in Docker.
-                    using var driver = new RemoteWebDriver(new Uri(seleniumHubUrl), options.ToCapabilities());
-                    driver.Navigate().GoToUrl(url);
-
-                    // Find the input field and enter the license plate
-                    IWebElement inputElement = driver.FindElement(By.CssSelector("input[name='fine']"));
-                    inputElement.Clear();
-                    inputElement.SendKeys(licensePlate);
-
-                    // Find and click the submit button
-                    IWebElement submitButton = driver.FindElement(By.CssSelector("button[type='submit']"));
-                    submitButton.Click();
-
-                    // Wait for the presence of the result message
-                    WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-                    By resultLocator = By.CssSelector("div.entry-text.no-edpk-message");
-                    IWebElement resultElement = wait.Until(ExpectedConditions.ElementIsVisible(resultLocator));
-
-                    // Check if the result element contains the keyword
-                    if (resultElement.Text.Contains(searchKeyword))
-                    {
-                        await LogAsync($"The keyword '{searchKeyword}' was found on the website.");
-                    }
-                    else
-                    {
-                        await SendMessageAsync(
-                            userDataList.Where(
-                                user => user.FriendlyName != null && user.FriendlyName.Contains("Ajanko"))
-                            .First()
-                            .ChatId,
-                            $"There is a parking fine at {url}");
-
-                        await SendMessageAsync(
-                            userDataList.Where(
-                                user => user.FriendlyName != null && user.FriendlyName.Contains("Ajanko"))
-                            .First()
-                            .ChatId,
-                            licensePlate);
-                    }
-
-                    break;
-                }
-                catch (WebDriverException)
-                {
-                    Task.Delay(5000).Wait(); // Wait for the Selenium hub to start
                 }
             }
         }
