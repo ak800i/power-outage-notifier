@@ -7,6 +7,7 @@
     using OpenQA.Selenium.Support.UI;
     using SeleniumExtras.WaitHelpers;
     using System.Net;
+    using System.Reflection;
     using Telegram.Bot;
     using Telegram.Bot.Exceptions;
     using Telegram.Bot.Types;
@@ -63,7 +64,16 @@
                 frequency = TimeSpan.FromHours(1);
             }
 
-            LogAsync($"Service running on {Environment.MachineName}").GetAwaiter().GetResult();
+            Version? version = Assembly.GetExecutingAssembly().GetName().Version;
+            if (version != null)
+            {
+                string versionInfo = $"v{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+                LogAsync($"Service running on {Environment.MachineName}, Version: {versionInfo}").GetAwaiter().GetResult();
+            }
+            else
+            {
+                LogAsync($"Service running on {Environment.MachineName}, Version information not available").GetAwaiter().GetResult();
+            }
 
             Task messageReceiverTask = Task.CompletedTask;
             if (enableReaderOnBot.HasValue && enableReaderOnBot.Value)
