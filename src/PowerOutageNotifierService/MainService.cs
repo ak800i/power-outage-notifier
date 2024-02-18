@@ -359,9 +359,18 @@
 
                                 int daysLeftUntilOutage = powerOutageUrls.IndexOf(url);
 
-                                await SendMessageAsync(
-                                    user.ChatId,
-                                    $"Power outage will occur in {daysLeftUntilOutage} days in {user.MunicipalityName}, {streetWithNumber}.");
+                                try
+                                {
+                                    await SendMessageAsync(
+                                        user.ChatId,
+                                        $"Power outage will occur in {daysLeftUntilOutage} days in {user.MunicipalityName}, {streetWithNumber}.");
+                                }
+                                catch (ApiRequestException e)
+                                {
+                                    await LogAsync(e.ToString());
+                                    await LogAsync($"ChatId: {user.ChatId} Power outage will occur in {daysLeftUntilOutage} days in {user.MunicipalityName}, {streetWithNumber}.");
+                                    throw;
+                                }
                             }
                         }
                     }
