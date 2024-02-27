@@ -305,6 +305,29 @@
             }
         }
 
+        private static readonly Dictionary<long, DateTime> lastNotificationTimes = [];
+
+        private static async Task NotifyUserAsync(long chatId, string message)
+        {
+            // Check if it's past noon and if a notification has not been sent today for the specific user
+            if (DateTime.Now.Hour >= 12)
+            {
+                if (lastNotificationTimes.TryGetValue(chatId, out DateTime lastNotificationTime))
+                {
+                    if (DateTime.Today > lastNotificationTime.Date)
+                    {
+                        await SendMessageAsync(chatId, message);
+                        lastNotificationTimes[chatId] = DateTime.Now; // Update last notification time
+                    }
+                }
+                else
+                {
+                    await SendMessageAsync(chatId, message);
+                    lastNotificationTimes.Add(chatId, DateTime.Now); // Add new entry for user
+                }
+            }
+        }
+
         private static async Task SendMessageAsync(long chatId, string message)
         {
             Console.WriteLine($"sending message... chatId={chatId} message={message}");
@@ -361,7 +384,7 @@
 
                                 try
                                 {
-                                    await SendMessageAsync(
+                                    await NotifyUserAsync(
                                         user.ChatId,
                                         $"Power outage will occur in {daysLeftUntilOutage} days in {user.MunicipalityName}, {streetWithNumber}.");
                                 }
@@ -413,7 +436,7 @@
                             if (nodeText.IndexOf(user.MunicipalityName, StringComparison.OrdinalIgnoreCase) >= 0
                                 && nodeText.IndexOf(declinationRoot, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                await SendMessageAsync(
+                                await NotifyUserAsync(
                                     user.ChatId,
                                     $"Water outage might occurr in {user.MunicipalityName}, {user.StreetName}.\n{nodeText}");
                             }
@@ -465,7 +488,7 @@
                                     if (text.IndexOf(user.MunicipalityName, StringComparison.OrdinalIgnoreCase) >= 0
                                         && text.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase) >= 0)
                                     {
-                                        await SendMessageAsync(
+                                        await NotifyUserAsync(
                                             user.ChatId,
                                             $"Water outage might be happening in {user.MunicipalityName}, {user.StreetName}.\n{text}");
                                     }
