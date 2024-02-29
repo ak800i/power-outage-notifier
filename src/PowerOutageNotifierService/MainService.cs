@@ -104,7 +104,7 @@
                             }
                             else
                             {
-                                throw;
+                                await LogAsync($"Exception in periodic task: {ex}");
                             }
                         }
                         catch (Exception ex)
