@@ -52,6 +52,13 @@
             "https://www.bvk.rs/kvarovi-na-mrezi/",
         ];
 
+        internal enum NotificationType
+        {
+            PowerOutage,
+            PlannedWaterOutage,
+            UnplannedWaterOutage,
+        }
+
         /// <summary>
         /// Starts the service.
         /// </summary>
@@ -305,25 +312,26 @@
             }
         }
 
-        private static readonly Dictionary<long, DateTime> lastNotificationTimes = [];
+        private static readonly Dictionary<(NotificationType, long), DateTime> lastNotificationTimes = [];
 
-        private static async Task NotifyUserAsync(long chatId, string message)
+        private static async Task NotifyUserAsync(NotificationType notificationType, long chatId, string message)
         {
             // Check if it's past noon and if a notification has not been sent today for the specific user
             if (DateTime.Now.Hour >= 12)
             {
-                if (lastNotificationTimes.TryGetValue(chatId, out DateTime lastNotificationTime))
+                var key = (notificationType, chatId);
+                if (lastNotificationTimes.TryGetValue(key, out DateTime lastNotificationTime))
                 {
                     if (DateTime.Today > lastNotificationTime.Date)
                     {
                         await SendMessageAsync(chatId, message);
-                        lastNotificationTimes[chatId] = DateTime.Now; // Update last notification time
+                        lastNotificationTimes[key] = DateTime.Now; // Update last notification time
                     }
                 }
                 else
                 {
                     await SendMessageAsync(chatId, message);
-                    lastNotificationTimes.Add(chatId, DateTime.Now); // Add new entry for user
+                    lastNotificationTimes.Add(key, DateTime.Now); // Add new entry for user
                 }
             }
         }
@@ -385,6 +393,7 @@
                                 try
                                 {
                                     await NotifyUserAsync(
+                                        NotificationType.PowerOutage,
                                         user.ChatId,
                                         $"Power outage will occur in {daysLeftUntilOutage} days in {user.MunicipalityName}, {streetWithNumber}.");
                                 }
@@ -437,6 +446,7 @@
                                 && nodeText.IndexOf(declinationRoot, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
                                 await NotifyUserAsync(
+                                    NotificationType.PlannedWaterOutage,
                                     user.ChatId,
                                     $"Water outage might occurr in {user.MunicipalityName}, {user.StreetName}.\n{nodeText}");
                             }
@@ -489,6 +499,7 @@
                                         && text.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase) >= 0)
                                     {
                                         await NotifyUserAsync(
+                                            NotificationType.UnplannedWaterOutage,
                                             user.ChatId,
                                             $"Water outage might be happening in {user.MunicipalityName}, {user.StreetName}.\n{text}");
                                     }
