@@ -316,7 +316,8 @@
 
         private static async Task NotifyUserAsync(NotificationType notificationType, long chatId, string message)
         {
-            // Check if it's past noon and if a notification has not been sent today for the specific user
+            // Check if it's past noon and if a notification has not been
+            // sent today for the specific user and specific notification type
             if (DateTime.Now.Hour >= 12)
             {
                 var key = (notificationType, chatId);
