@@ -387,7 +387,11 @@
                                 && streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
                                 string streetWithNumber = streets[streets.IndexOf(user.StreetName, StringComparison.OrdinalIgnoreCase)..];
-                                streetWithNumber = streetWithNumber[..streets.IndexOf(',')];
+                                int commaIndex = streetWithNumber.IndexOf(',');
+                                if (commaIndex >= 0)
+                                {
+                                    streetWithNumber = streetWithNumber[..commaIndex];
+                                }
 
                                 int daysLeftUntilOutage = powerOutageUrls.IndexOf(url);
 
