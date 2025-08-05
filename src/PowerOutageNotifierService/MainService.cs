@@ -312,7 +312,7 @@
             }
         }
 
-        private static readonly Dictionary<(NotificationType, long), DateTime> lastNotificationTimes = [];
+        private static readonly Dictionary<(NotificationType, long, string), DateTime> lastNotificationTimes = [];
 
         private static async Task NotifyUserAsync(NotificationType notificationType, long chatId, string message)
         {
@@ -320,7 +320,7 @@
             // sent today for the specific user and specific notification type
             if (DateTime.Now.Hour >= 12)
             {
-                var key = (notificationType, chatId);
+                var key = (notificationType, chatId, message);
                 if (lastNotificationTimes.TryGetValue(key, out DateTime lastNotificationTime))
                 {
                     if (DateTime.Today > lastNotificationTime.Date)
