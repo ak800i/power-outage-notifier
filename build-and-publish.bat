@@ -14,5 +14,6 @@ set "filename=poweroutagenotifier-%year%.%month%.%day%.tar"
 rem Run Docker commands
 docker build -t belgradebc/poweroutagenotifier .
 docker save -o "%filename%" belgradebc/poweroutagenotifier
+docker push belgradebc/poweroutagenotifier
 
 endlocal
