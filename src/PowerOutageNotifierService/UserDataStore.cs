@@ -44,7 +44,10 @@
 
             using StreamReader reader = new StreamReader(csvFilePath);
             using CsvReader csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-            return csv.GetRecords<UserData>().Where(u => !u.FriendlyName.StartsWith("#")).ToList();
+            return csv
+                .GetRecords<UserData>()
+                .Where(u => !string.IsNullOrEmpty(u.FriendlyName) && !u.FriendlyName.StartsWith("#"))
+                .ToList();
         }
 
         /// <summary>
