@@ -1,11 +1,6 @@
 ﻿namespace PowerOutageNotifier.PowerOutageNotifierService
 {
     using HtmlAgilityPack;
-    using OpenQA.Selenium;
-    using OpenQA.Selenium.Chrome;
-    using OpenQA.Selenium.Remote;
-    using OpenQA.Selenium.Support.UI;
-    using SeleniumExtras.WaitHelpers;
     using System.Net;
     using System.Net.Http;
     using System.Reflection;
