@@ -7,6 +7,7 @@
     using OpenQA.Selenium.Support.UI;
     using SeleniumExtras.WaitHelpers;
     using System.Net;
+    using System.Net.Http;
     using System.Reflection;
     using Telegram.Bot;
     using Telegram.Bot.Exceptions;
@@ -29,7 +30,13 @@
 
         private static readonly string telegramBotToken = ConfigReader.ReadBotToken();
 
-        private static readonly TelegramBotClient botClient = new TelegramBotClient(telegramBotToken);
+        // Use a shared HttpClient with a sane timeout to avoid long hangs and allow retries
+        private static readonly HttpClient httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(30),
+        };
+
+        private static readonly TelegramBotClient botClient = new TelegramBotClient(telegramBotToken, httpClient);
 
         private static readonly List<UserData> userDataList = UserDataStore.ReadUserData();
 
@@ -101,7 +108,7 @@
                                 CheckAndNotifyWaterOutageAsync(),
                                 CheckAndNotifyUnplannedWaterOutageAsync());
 
-                            Thread.Sleep(frequency.Value);
+                            await Task.Delay(frequency.Value);
                         }
                         catch (WebException ex)
                         {
@@ -140,7 +147,8 @@
             {
                 try
                 {
-                    Update[] updates = await botClient.GetUpdatesAsync(offset);
+                    // Use long polling with a timeout to reduce request rate and avoid 429
+                    Update[] updates = await botClient.GetUpdatesAsync(offset: offset, timeout: 30);
 
                     foreach (Update update in updates)
                     {
@@ -164,23 +172,53 @@
                         offset = update.Id + 1;
                     }
                 }
+                catch (ApiRequestException ex)
+                {
+                    // Handle Telegram API errors (e.g., flood control / rate limits)
+                    int? retryAfter = ex.Parameters?.RetryAfter;
+                    if (ex.ErrorCode == 429 || retryAfter.HasValue)
+                    {
+                        int seconds = retryAfter ?? 5;
+                        await LogAsync($"MessageReceiver rate limited. Retrying after {seconds}s.");
+                        await Task.Delay(TimeSpan.FromSeconds(seconds));
+                    }
+                    else if (ex.ErrorCode == 401)
+                    {
+                        // Invalid token or unauthorized. Log and back off, but don't crash.
+                        await LogAsync("MessageReceiver unauthorized (401). Check bot token.");
+                        await Task.Delay(TimeSpan.FromSeconds(30));
+                    }
+                    else if (ex.ErrorCode >= 500)
+                    {
+                        // Telegram server error - transient
+                        await Task.Delay(TimeSpan.FromSeconds(5));
+                    }
+                    else
+                    {
+                        await LogAsync($"MessageReceiver ApiRequestException: {ex.Message}");
+                        await Task.Delay(TimeSpan.FromSeconds(5));
+                    }
+                }
                 catch (RequestException ex)
                 {
                     if (ex.HttpStatusCode == HttpStatusCode.ServiceUnavailable
                         || ex.HttpStatusCode == HttpStatusCode.InternalServerError
                         || ex.Message.Contains("Resource temporarily unavailable"))
                     {
-                        // do not log the exception
+                        // transient network/server issues; back off briefly
+                        await Task.Delay(TimeSpan.FromSeconds(2));
                     }
                     else
                     {
-                        throw;
+                        await LogAsync($"MessageReceiver RequestException: {ex.Message}");
+                        await Task.Delay(TimeSpan.FromSeconds(5));
                     }
                 }
                 catch (Exception ex)
                 {
                     // Log the exception
                     await LogAsync($"MessageReceiver Exception:\n{ex}");
+                    await Task.Delay(TimeSpan.FromSeconds(5));
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(2)); // Delay to prevent excessive polling
@@ -308,7 +346,15 @@
             Console.WriteLine(message);
             if (logChatId.HasValue)
             {
-                _ = await botClient.SendTextMessageAsync(logChatId.Value, message);
+                try
+                {
+                    _ = await botClient.SendTextMessageAsync(logChatId.Value, message);
+                }
+                catch (Exception ex)
+                {
+                    // Logging to Telegram failed; write to console and continue
+                    Console.WriteLine($"Failed to send log to Telegram: {ex.Message}");
+                }
             }
         }
 
@@ -340,7 +386,90 @@
         private static async Task SendMessageAsync(long chatId, string message)
         {
             Console.WriteLine($"sending message... chatId={chatId} message={message}");
-            _ = await botClient.SendTextMessageAsync(chatId, message);
+
+            int attempt = 0;
+            const int maxAttempts = 3;
+            TimeSpan delay = TimeSpan.FromSeconds(2);
+
+            while (true)
+            {
+                try
+                {
+                    _ = await botClient.SendTextMessageAsync(chatId, message);
+                    return;
+                }
+                catch (ApiRequestException ex)
+                {
+                    int? retryAfter = ex.Parameters?.RetryAfter;
+
+                    if (ex.ErrorCode == 429 || retryAfter.HasValue)
+                    {
+                        int seconds = retryAfter ?? 5;
+                        Console.WriteLine($"Rate limited when sending to {chatId}. Retrying after {seconds}s.");
+                        await Task.Delay(TimeSpan.FromSeconds(seconds));
+                        // do not increment attempt on known rate limit; Telegram dictates backoff
+                        continue;
+                    }
+                    else if (ex.ErrorCode == 403)
+                    {
+                        // Bot was blocked by the user or cannot message the user; log and stop retrying
+                        await LogAsync($"Cannot send message to {chatId}: forbidden (user blocked bot or no permission).");
+                        return;
+                    }
+                    else if (ex.ErrorCode >= 500)
+                    {
+                        // Server-side error; retry with backoff
+                        attempt++;
+                        if (attempt >= maxAttempts)
+                        {
+                            await LogAsync($"Failed to send message to {chatId} after {attempt} attempts (server error): {ex.Message}");
+                            return;
+                        }
+
+                        await Task.Delay(delay);
+                        delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 30));
+                    }
+                    else
+                    {
+                        // Other API error; do a limited retry then give up
+                        attempt++;
+                        if (attempt >= maxAttempts)
+                        {
+                            await LogAsync($"Failed to send message to {chatId} after {attempt} attempts: {ex.Message}");
+                            return;
+                        }
+
+                        await Task.Delay(delay);
+                        delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 30));
+                    }
+                }
+                catch (TaskCanceledException ex)
+                {
+                    // Timeout or cancellation; retry with backoff
+                    attempt++;
+                    if (attempt >= maxAttempts)
+                    {
+                        await LogAsync($"Timeout sending message to {chatId} after {attempt} attempts: {ex.Message}");
+                        return;
+                    }
+
+                    await Task.Delay(delay);
+                    delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 30));
+                }
+                catch (Exception ex)
+                {
+                    // Unexpected error; retry a couple of times then give up
+                    attempt++;
+                    if (attempt >= maxAttempts)
+                    {
+                        await LogAsync($"Unexpected error sending message to {chatId} after {attempt} attempts: {ex.Message}");
+                        return;
+                    }
+
+                    await Task.Delay(delay);
+                    delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 30));
+                }
+            }
         }
 
         /// <summary>
@@ -402,11 +531,10 @@
                                         user.ChatId,
                                         $"Power outage will occur in {daysLeftUntilOutage} days in {user.MunicipalityName}, {streetWithNumber}.");
                                 }
-                                catch (ApiRequestException e)
+                                catch (Exception e)
                                 {
-                                    await LogAsync(e.ToString());
-                                    await LogAsync($"ChatId: {user.ChatId} Power outage will occur in {daysLeftUntilOutage} days in {user.MunicipalityName}, {streetWithNumber}.");
-                                    throw;
+                                    // Log and continue without crashing the periodic loop
+                                    await LogAsync($"Failed to notify user {user.ChatId}: {e.Message}");
                                 }
                             }
                         }
