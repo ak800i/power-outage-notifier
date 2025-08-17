@@ -196,11 +196,19 @@
                 }
                 catch (RequestException ex)
                 {
-                    if (ex.HttpStatusCode == HttpStatusCode.ServiceUnavailable
+                    // Treat common transient network errors (including timeouts) as noise: don't log them, just back off briefly
+                    bool isTransient =
+                        ex.HttpStatusCode == HttpStatusCode.ServiceUnavailable
                         || ex.HttpStatusCode == HttpStatusCode.InternalServerError
-                        || ex.Message.Contains("Resource temporarily unavailable"))
+                        || ex.HttpStatusCode == HttpStatusCode.RequestTimeout
+                        || ex.HttpStatusCode == HttpStatusCode.GatewayTimeout
+                        || (ex.Message?.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0)
+                        || (ex.Message?.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0)
+                        || (ex.Message?.IndexOf("Resource temporarily unavailable", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                    if (isTransient)
                     {
-                        // transient network/server issues; back off briefly
+                        // transient network/server issues; back off briefly without logging
                         await Task.Delay(TimeSpan.FromSeconds(2));
                     }
                     else
