@@ -13,8 +13,8 @@
         /// <summary>
         /// Example file contents:
         /// 
-        /// Friendly Name,Chat ID,Municipality Name,Street Name
-        /// PositiveTest,123456,Палилула,САВЕ МРКАЉА
+        /// Friendly Name,Chat ID,Municipality Name,Street Name,Street Number
+        /// PositiveTest,123456,Палилула,САВЕ МРКАЉА,31В
         /// </summary>
         private static readonly string csvFilePath;
 
@@ -39,7 +39,7 @@
             if (!File.Exists(csvFilePath))
             {
                 // Create an empty file with just the headers
-                File.WriteAllText(csvFilePath, "Friendly Name,Chat ID,Municipality Name,Street Name\n");
+                File.WriteAllText(csvFilePath, "Friendly Name,Chat ID,Municipality Name,Street Name,Street Number\n");
             }
 
             using StreamReader reader = new StreamReader(csvFilePath);

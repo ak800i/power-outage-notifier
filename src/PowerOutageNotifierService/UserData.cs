@@ -31,5 +31,12 @@
         /// </summary>
         [Name("Street Name")]
         public string? StreetName { get; set; }
+
+        /// <summary>
+        /// The street number of the user (optional).
+        /// When null, the user receives notifications for all numbers on their street.
+        /// </summary>
+        [Name("Street Number")]
+        public string? StreetNumber { get; set; }
     }
 }
