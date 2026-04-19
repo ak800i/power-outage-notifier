@@ -255,6 +255,20 @@
                     break;
                 case UserRegistrationState.AwaitingStreetName:
                     registrationData.UserData.StreetName = LatinToCyrillicConverter.ConvertLatinToCyrillic(message.Text);
+                    registrationData.State = UserRegistrationState.AwaitingStreetNumber;
+                    await SendMessageAsync(chatId, "Please enter your street number (example: 31В), or type 'skip' to receive notifications for all numbers on this street.");
+                    break;
+                case UserRegistrationState.AwaitingStreetNumber:
+                    if (message.Text != null
+                        && message.Text.Trim().Equals("skip", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // User chose to skip — StreetNumber stays null
+                    }
+                    else
+                    {
+                        registrationData.UserData.StreetNumber = LatinToCyrillicConverter.ConvertLatinToCyrillic(message.Text);
+                    }
+
                     _ = userRegistrationData.Remove(chatId); // Registration complete
                     await RegisterUser(registrationData.UserData);
                     break;
@@ -337,7 +351,8 @@
                     userInfo +=
                         $"Friendly Name: {user.FriendlyName}\n" +
                         $"Municipality Name: {user.MunicipalityName}\n" +
-                        $"Street Name: {user.StreetName}\n\n";
+                        $"Street Name: {user.StreetName}\n" +
+                        $"Street Number: {user.StreetNumber ?? "(all numbers)"}\n\n";
                 }
 
                 await SendMessageAsync(chatId, $"Here is the information I have on you:\n{userInfo}");
