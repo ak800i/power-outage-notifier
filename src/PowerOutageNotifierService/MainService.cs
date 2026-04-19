@@ -1,4 +1,4 @@
-namespace PowerOutageNotifier.PowerOutageNotifierService
+﻿namespace PowerOutageNotifier.PowerOutageNotifierService
 {
     using HtmlAgilityPack;
     using System.Net;
@@ -665,6 +665,13 @@ namespace PowerOutageNotifier.PowerOutageNotifierService
                                 if (commaIndex >= 0)
                                 {
                                     streetWithNumber = streetWithNumber[..commaIndex];
+                                }
+
+                                // If user has a street number, check if it falls within the affected range
+                                if (user.StreetNumber != null
+                                    && !IsUserStreetNumberInRange(streetWithNumber, user.StreetNumber))
+                                {
+                                    continue; // User's number is not in the affected range — skip
                                 }
 
                                 int daysLeftUntilOutage = powerOutageUrls.IndexOf(url);
