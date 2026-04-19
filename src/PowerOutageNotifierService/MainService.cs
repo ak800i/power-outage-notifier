@@ -1,4 +1,4 @@
-﻿namespace PowerOutageNotifier.PowerOutageNotifierService
+namespace PowerOutageNotifier.PowerOutageNotifierService
 {
     using HtmlAgilityPack;
     using System.Net;
@@ -488,6 +488,133 @@
                     delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 30));
                 }
             }
+        }
+
+        /// <summary>
+        /// Checks if the user's street number falls within the number ranges
+        /// listed in the scraped street text (e.g., "ЏОНА КЕНЕДИЈА: 55-57,22А").
+        /// Returns true if the number is in range, or if the range can't be parsed (safety fallback).
+        /// </summary>
+        public static bool IsUserStreetNumberInRange(string streetWithNumber, string userStreetNumber)
+        {
+            // Extract the segment after the colon
+            int colonIndex = streetWithNumber.IndexOf(':');
+            if (colonIndex < 0)
+            {
+                return true; // No colon found — can't parse, fallback to notify
+            }
+
+            string numbersPart = streetWithNumber[(colonIndex + 1)..].Trim();
+            if (string.IsNullOrEmpty(numbersPart))
+            {
+                return true; // Nothing after colon — fallback to notify
+            }
+
+            // Extract the numeric part of the user's street number
+            if (!TryExtractNumber(userStreetNumber, out int userNumber))
+            {
+                return true; // Can't extract user's number — fallback to notify
+            }
+
+            // Split by comma and check each segment
+            string[] segments = numbersPart.Split(',');
+            bool anySegmentParsed = false;
+
+            foreach (string rawSegment in segments)
+            {
+                string segment = rawSegment.Trim();
+                if (string.IsNullOrEmpty(segment))
+                {
+                    continue;
+                }
+
+                // Check if it's a range (contains a dash between numbers)
+                int dashIndex = FindRangeDash(segment);
+                if (dashIndex > 0)
+                {
+                    // Range: e.g., "55-57" or "15Б-41"
+                    string startPart = segment[..dashIndex].Trim();
+                    string endPart = segment[(dashIndex + 1)..].Trim();
+
+                    if (TryExtractNumber(startPart, out int rangeStart)
+                        && TryExtractNumber(endPart, out int rangeEnd))
+                    {
+                        anySegmentParsed = true;
+                        if (userNumber >= rangeStart && userNumber <= rangeEnd)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    // Single number: e.g., "22А"
+                    if (TryExtractNumber(segment, out int singleNumber))
+                    {
+                        anySegmentParsed = true;
+                        if (userNumber == singleNumber)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // If no segments could be parsed at all, fallback to notify
+            return !anySegmentParsed;
+        }
+
+        /// <summary>
+        /// Extracts the leading numeric part from a string like "31В" → 31, "55" → 55.
+        /// Returns false if no leading digits found.
+        /// </summary>
+        private static bool TryExtractNumber(string value, out int number)
+        {
+            number = 0;
+            int i = 0;
+            while (i < value.Length && char.IsDigit(value[i]))
+            {
+                i++;
+            }
+
+            if (i == 0)
+            {
+                return false;
+            }
+
+            return int.TryParse(value[..i], out number);
+        }
+
+        /// <summary>
+        /// Finds the index of the dash that separates a range (e.g., "15Б-41").
+        /// Returns -1 if no valid range dash is found.
+        /// Skips leading characters to avoid treating the start of a string as a dash.
+        /// </summary>
+        private static int FindRangeDash(string segment)
+        {
+            // A range dash appears after at least one digit (or digit+letter).
+            // Scan past the leading number+suffix to find a dash.
+            int i = 0;
+
+            // Skip leading digits
+            while (i < segment.Length && char.IsDigit(segment[i]))
+            {
+                i++;
+            }
+
+            // Skip optional letter suffix (e.g., the "Б" in "15Б-41")
+            while (i < segment.Length && char.IsLetter(segment[i]))
+            {
+                i++;
+            }
+
+            // Now look for a dash
+            if (i < segment.Length && segment[i] == '-')
+            {
+                return i;
+            }
+
+            return -1;
         }
 
         /// <summary>
