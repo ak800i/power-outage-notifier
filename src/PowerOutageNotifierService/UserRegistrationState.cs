@@ -24,5 +24,10 @@
         /// We are awaiting the street name of the user.
         /// </summary>
         AwaitingStreetName,
+
+        /// <summary>
+        /// We are awaiting the street number of the user.
+        /// </summary>
+        AwaitingStreetNumber,
     }
 }
